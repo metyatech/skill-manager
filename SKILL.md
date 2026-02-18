@@ -36,13 +36,18 @@ The only work you do directly:
 
 ## Model/Cost Selection
 
-Always use the cheapest available model that can handle the task. Evaluate from cheapest up:
+Minimize the **total cost to achieve the goal**, not just the per-invocation model cost.
+
+- **On flat-rate platforms (e.g., Codex where all models cost the same):** Always use the most capable available model — there is no cost difference, so capability is the only variable.
+- **On tiered platforms (e.g., Claude Code with haiku/sonnet/opus):** Prefer cheaper models only when they can reliably succeed on the first attempt.
+
+**Task guidance for tiered platforms:**
 
 - **Cheapest/fastest tier:** File search, information extraction, simple commands, mechanical code changes
 - **Mid tier:** Feature implementation with clear spec, writing tests, known bug fixes, refactoring, most typical dev tasks
 - **Most capable tier (use only when necessary):** Architectural decisions, subtle multi-layered debugging, complex interdependent refactoring, security-sensitive code
 
-**Selection rule:** Default to cheapest. Upgrade only if cheaper tier would likely fail. When uncertain, prefer cheaper — retry with stronger model if needed.
+**Selection rule:** "Same outcome achieved → prefer cheaper; cheaper model likely to fail → use the model that will succeed." A more expensive model that succeeds on the first attempt is cheaper overall than a cheaper model that requires retries.
 
 ## Dispatch Workflow
 
