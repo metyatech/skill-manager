@@ -36,18 +36,21 @@ The only work you do directly:
 
 ## Model/Cost Selection
 
-Minimize the **total cost to achieve the goal**, not just the per-invocation model cost.
+Minimize the **total cost to achieve the goal**. Total cost includes model pricing, reasoning/thinking token consumption, context usage, and retry overhead.
 
-- **On flat-rate platforms (e.g., Codex where all models cost the same):** Always use the most capable available model — there is no cost difference, so capability is the only variable.
-- **On tiered platforms (e.g., Claude Code with haiku/sonnet/opus):** Prefer cheaper models only when they can reliably succeed on the first attempt.
+**Key factors:**
 
-**Task guidance for tiered platforms:**
+- **Reasoning effort:** Extended reasoning (high/xhigh thinking levels) increases cost significantly. Use the minimum reasoning level that reliably produces correct output for the task.
+- **Model generation:** Newer-generation models often achieve equal or better results with less reasoning overhead. Prefer a newer model at lower reasoning effort over an older model at maximum reasoning effort when both can succeed.
+- **Context efficiency:** Factor in context window size and token throughput. A model that handles a task in one pass is cheaper than one that requires splitting.
+- **Retry risk:** A model that succeeds on the first attempt at slightly higher unit cost is cheaper overall than one that requires retries.
 
-- **Cheapest/fastest tier:** File search, information extraction, simple commands, mechanical code changes
-- **Mid tier:** Feature implementation with clear spec, writing tests, known bug fixes, refactoring, most typical dev tasks
-- **Most capable tier (use only when necessary):** Architectural decisions, subtle multi-layered debugging, complex interdependent refactoring, security-sensitive code
+**Selection process:**
 
-**Selection rule:** "Same outcome achieved → prefer cheaper; cheaper model likely to fail → use the model that will succeed." A more expensive model that succeeds on the first attempt is cheaper overall than a cheaper model that requires retries.
+1. Assess task complexity (mechanical / moderate / complex / architectural).
+2. Identify the cheapest model + reasoning level combination likely to succeed on the first attempt.
+3. If uncertain, start one tier up rather than risking a retry.
+4. On flat-rate platforms where all models cost the same: always use the most capable model.
 
 ## Dispatch Workflow
 
