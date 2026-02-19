@@ -123,38 +123,50 @@ Stop and report the limitation to the user. Do not simulate or substitute the wo
 
 Before selecting an agent, query the `ai-quota` tool (intent: check remaining quota per agent/model). If the tool is unavailable, treat all agents as having quota and proceed with capability routing. The quota check is a best-effort gate, not a hard requirement.
 
-### Capability Routing Table (B-primary)
+### Routing principles
 
-Route each task to the agent and model best suited to its nature. Set the `model` parameter in Spawn explicitly from this table.
+All three agents (claude, codex, gemini) run on flat-rate subscriptions with periodic quota limits. Cost is not a differentiator; route by **task affinity** and **quota conservation**.
 
-| Task type | Agent | Model (→ `model` param) | Rationale |
+- **claude** — reasoning quality, code comprehension, nuanced judgment
+- **codex** — native sandboxed execution, shell/file system operations
+- **gemini** — massive context window (347k+ tokens confirmed)
+- **Quota conservation** — use lighter models for simple tasks to preserve quota for complex ones
+- **Quota distribution** — spread work across agents; avoid concentrating all tasks on one agent
+
+### Capability Routing Table
+
+Set `agent_type` and `model` in Spawn from this table.
+
+| Task type | Agent | Model | Rationale |
 |---|---|---|---|
-| Security review / architecture analysis | claude | claude-sonnet-4-6 | 1.2% SWE-bench gap vs Opus at 5x lower cost |
-| Complex multi-file refactoring | claude | claude-sonnet-4-6 | 200k context; well-scoped tasks don't need Opus |
-| Code review (deep, cross-file) | claude | claude-sonnet-4-6 | Sonnet outperforms Opus on long-context retrieval |
-| Long-context analysis (up to 200k tokens) | claude | claude-sonnet-4-6 | Max context for Claude |
-| Long-context analysis (>200k tokens) | codex | gpt-5.1-codex-max | Claude context limit exceeded; Codex has 400k window |
-| Natural language understanding / spec interpretation | claude | claude-sonnet-4-6 | Haiku hallucination risk too high for NL tasks |
-| Design discussions, ADR drafting | claude | claude-sonnet-4-6 | Trade-off reasoning beyond Haiku's capability |
-| Simple lookup / clarification | claude | claude-haiku-4-5-20251001 | Cheapest; adequate for single-turn factual Q&A |
-| Speed-critical, low-latency tasks | claude | claude-haiku-4-5-20251001 | Fastest TTFT; lowest cost |
-| Terminal/bash execution, shell scripts | codex | gpt-5.2-codex | Native sandbox; cost-optimal for shell work |
-| Sandboxed code execution / validation | codex | gpt-5.2-codex | Codex containerized sandbox |
-| CI/CD tasks, pipeline automation | codex | gpt-5.1-codex-max | Multi-step sequencing and error recovery |
-| Mechanical transformations (rename, reformat, migrate) | codex | gpt-5.2-codex | No deep reasoning required |
-| File system operations (bulk create/move/delete) | codex | gpt-5.2-codex | Shell-level operations in sandbox |
-| End-to-end feature implementation (well-specified) | codex | gpt-5.2-codex | Subscription-based; no per-token cost |
+| **Claude — reasoning & code quality** ||||
+| Security review, vulnerability analysis | claude | claude-sonnet-4-6 | Superior code reasoning; critical correctness |
+| Architecture analysis, design decisions | claude | claude-sonnet-4-6 | Nuanced trade-off judgment |
+| Deep code review (cross-file, subtle bugs) | claude | claude-sonnet-4-6 | Best code comprehension |
+| NL understanding, spec/requirement interpretation | claude | claude-sonnet-4-6 | Lowest hallucination risk for ambiguous text |
+| Complex multi-file implementation | claude | claude-sonnet-4-6 | Implementation quality matters |
+| Safety-critical / highest-correctness tasks | claude | claude-opus-4-6 | Maximum capability; reserve for truly critical work |
+| Simple lookup, quick Q&A, clarification | claude | claude-haiku-4-5-20251001 | Fast; conserves Sonnet/Opus quota |
+| **Codex — sandbox & execution** ||||
+| Terminal/bash/shell script execution | codex | gpt-5.2-codex | Native containerized sandbox |
+| Sandboxed code execution / validation | codex | gpt-5.2-codex | Isolated runtime; quota-efficient |
+| Mechanical transforms (rename, reformat, migrate) | codex | gpt-5.1-codex-mini | Lightweight; no reasoning needed; conserves quota |
+| File system bulk operations | codex | gpt-5.1-codex-mini | Shell-level; lightest model sufficient |
+| CI/CD, multi-step pipeline automation | codex | gpt-5.1-codex-max | Reliable multi-step execution |
+| End-to-end feature implementation (well-specified) | codex | gpt-5.3-codex | Latest + most capable codex model |
+| **Gemini — large context** ||||
+| Codebase / document analysis > 200k tokens | gemini | gemini-3-pro-preview | 347k+ token context confirmed |
+| Large log, trace, or data file analysis | gemini | gemini-3-pro-preview | Huge context; complementary to claude quota |
+| Fast summarization of large documents | gemini | gemini-3-flash-preview | Speed + large context; quota-light |
 
-### Quota Fallback Logic (A-fallback)
+### Quota Fallback Logic
 
 If the primary agent has no remaining quota:
 
 1. Query quota for all other agents.
-2. Select any agent with available quota that can plausibly complete the task (capability match is secondary to availability).
-3. If the fallback agent is significantly less capable for the task, note the degradation in the dispatch report.
-4. If no agent has quota, queue the task and report the block to the user immediately; do not drop it silently.
-
-> Note: claude-opus-4-6 is not included in the primary routing table. It may be used as a last-resort fallback when a claude-sonnet-4-6 invocation has failed and the task is safety-critical. In that case, treat it as a capability escalation, not a quota fallback.
+2. Select any agent with available quota that can plausibly complete the task.
+3. If the fallback is significantly less capable, note the degradation in the dispatch report.
+4. If no agent has quota, queue the task and report the block immediately; do not drop silently.
 
 ### Routing Decision Sequence
 
