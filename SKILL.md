@@ -148,12 +148,13 @@ Set `agent_type` and `model` in Spawn from this table.
 | Safety-critical / highest-correctness tasks | claude | claude-opus-4-6 | Maximum capability; reserve for truly critical work |
 | Simple lookup, quick Q&A, clarification | claude | claude-haiku-4-5-20251001 | Fast; conserves Sonnet/Opus quota |
 | **Codex — sandbox & execution** ||||
-| Terminal/bash/shell script execution | codex | gpt-5.2-codex | Native containerized sandbox |
-| Sandboxed code execution / validation | codex | gpt-5.2-codex | Isolated runtime; quota-efficient |
-| Mechanical transforms (rename, reformat, migrate) | codex | gpt-5.1-codex-mini | Lightweight; no reasoning needed; conserves quota |
+| Terminal/bash/shell script execution | codex | gpt-5.2-codex | Native containerized sandbox; coding-optimized |
+| Sandboxed code execution / validation | codex | gpt-5.2-codex | Isolated runtime; coding-optimized |
+| Mechanical transforms (rename, reformat, migrate) | codex | gpt-5.1-codex-mini | Lightest codex model; no reasoning needed |
 | File system bulk operations | codex | gpt-5.1-codex-mini | Shell-level; lightest model sufficient |
 | CI/CD, multi-step pipeline automation | codex | gpt-5.1-codex-max | Reliable multi-step execution |
 | End-to-end feature implementation (well-specified) | codex | gpt-5.3-codex | Latest + most capable codex model |
+| General reasoning in sandbox (claude quota low) | codex | gpt-5.2 | General-purpose GPT with reasoning; not codex-specific; use as claude fallback |
 | **Gemini — large context** ||||
 | Codebase / document analysis > 200k tokens | gemini | gemini-3-pro-preview | 347k+ token context confirmed |
 | Large log, trace, or data file analysis | gemini | gemini-3-pro-preview | Huge context; complementary to claude quota |
