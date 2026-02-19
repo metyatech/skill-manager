@@ -88,9 +88,36 @@ Minimize the **total cost to achieve the goal**. Total cost includes model prici
 
 ### Delegation Standard
 
-Use whatever native background-agent launching capability is available in your current session. The specific tool name varies by platform — use it as-is without simulating or performing the work yourself.
+Subagents are launched via **@swarmify/agents-mcp** — an MCP server that works uniformly from Claude Code, Codex, and Gemini CLI.
 
-If no delegation mechanism is available in the current session, stop and report the limitation to the user immediately. Do not simulate or substitute the work yourself.
+**One-time setup per platform (run once by the user):**
+
+```
+# Claude Code
+claude mcp add --scope user Swarm -- npx -y @swarmify/agents-mcp
+
+# Codex
+codex mcp add swarm -- npx -y @swarmify/agents-mcp
+
+# Gemini CLI
+gemini mcp add Swarm -- npx -y @swarmify/agents-mcp
+```
+
+**Dispatching a task:**
+
+Use the `Spawn` tool exposed by the MCP server:
+- `prompt`: the full self-contained task description
+- `agent_type`: target agent (`claude`, `codex`, `gemini`, etc.)
+- `effort`: reasoning level (`low`, `medium`, `high`)
+- `background`: `true` for parallel/non-blocking execution
+
+**Monitoring:**
+
+Use `Status` to check progress and `Stop` to cancel. Use `Tasks` to list all active subagents.
+
+**If @swarmify/agents-mcp is not configured:**
+
+Stop and report the limitation to the user. Do not simulate or substitute the work yourself.
 
 ### Quota Check
 
