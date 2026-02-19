@@ -86,33 +86,11 @@ Minimize the **total cost to achieve the goal**. Total cost includes model prici
 
 ## Cross-Agent Invocation
 
-### Environment Verification (CRITICAL)
-Before attempting to delegate, you MUST verify that the required delegation tools are actually registered in your current session.
-- **MCP Tool Check:** To see if any MCP servers (external agents like Claude Code or Codex) are configured, run: `claude mcp list`.
-- **On Missing Tools:** If no suitable MCP servers are configured, **DO NOT** attempt to simulate the agent's work or proceed with the delegation. Stop and report the limitation to the user immediately. Propose alternatives, such as:
-    1.  Guiding the user to set up an MCP server using `claude mcp add ...` (see examples below).
-    2.  Providing the prompt for the user to run manually on an external agent.
-    3.  If `claude` CLI is not installed, guide the user to install it.
-
 ### Delegation Standard
-Agents are invoked via MCP (Model Context Protocol). Each target agent is exposed as an MCP server (e.g., via claude-code-mcp) and called through the standard MCP tool interface. The `claude` CLI can act as an MCP client.
 
-### Using 'claude' CLI as an MCP Client
-To delegate a task to an external agent configured as an MCP server using the `claude` CLI:
-1.  **Ensure MCP Server is Configured:** Use `claude mcp list` to check for available MCP servers. If none are configured, you may need to add one.
-    *   **Example: Adding a local Claude Code MCP server (if 'claude serve' is running):**
-        ```bash
-        claude mcp add claude-local --transport http http://localhost:PORT/mcp
-        ```
-        (Replace `PORT` with the actual port of your `claude serve` instance.)
-2.  **Delegate the Task:** Use `claude -p --mcp-config <server_name> <prompt_content>` to send a prompt to the external agent.
-    *   **Example:** If you have an `ai-prompt.md` and an MCP server named `claude-local`:
-        ```bash
-        claude -p --mcp-config claude-local --system-prompt "You are a grading AI." -- "$(Get-Content ai-prompt.md -Raw)"
-        ```
-    *   Ensure the prompt content is appropriately escaped for the shell.
-    *   Handle the output from the `claude` command (e.g., redirect to a file).
+Use whatever native background-agent launching capability is available in your current session. The specific tool name varies by platform — use it as-is without simulating or performing the work yourself.
 
+If no delegation mechanism is available in the current session, stop and report the limitation to the user immediately. Do not simulate or substitute the work yourself.
 
 ### Quota Check
 
