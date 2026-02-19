@@ -126,17 +126,6 @@ If the primary agent has no remaining quota:
 
 > Note: claude-opus-4-6 is not included in the primary routing table. It may be used as a last-resort fallback when a claude-sonnet-4-6 invocation has failed and the task is safety-critical. In that case, treat it as a capability escalation, not a quota fallback.
 
-### Manager Model
-
-The manager itself (this skill) should run on:
-
-- **claude-opus-4-6** when on a flat-rate Claude Code subscription (no cost difference from Sonnet; better orchestration quality; 200k context window with auto-compaction for long sessions)
-- **claude-sonnet-4-6** when API-billed (5x cheaper than Opus; adequate for orchestration tasks)
-
-Haiku is not suitable for the manager role: context accumulates quickly across a multi-task session, and Haiku's 200k window combined with its lower reasoning quality make orchestration errors more likely.
-
-Note: Both Claude models have a 200k context window. For sessions exceeding 200k, rely on the platform's auto-compaction (Claude Code) or proactively summarize prior context before dispatching new agents.
-
 ### Routing Decision Sequence
 
 1. Classify the task using the routing table above.
