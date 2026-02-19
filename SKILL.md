@@ -88,19 +88,19 @@ Minimize the **total cost to achieve the goal**. Total cost includes model prici
 
 ### Delegation Standard
 
-Subagents are launched via **@swarmify/agents-mcp** — an MCP server that works uniformly from Claude Code, Codex, and Gemini CLI.
+Subagents are launched via **agents-mcp** (metyatech's standalone repo) — an MCP server that works uniformly from Claude Code, Codex, and Gemini CLI.
 
 **One-time setup per platform (run once by the user):**
 
 ```
 # Claude Code
-claude mcp add --scope user Swarm -- npx -y @swarmify/agents-mcp
+claude mcp add --scope user Swarm -- npx -y --package git+https://github.com/metyatech/agents-mcp.git#main agents-mcp
 
 # Codex
-codex mcp add swarm -- npx -y @swarmify/agents-mcp
+codex mcp add swarm -- npx -y --package git+https://github.com/metyatech/agents-mcp.git#main agents-mcp
 
 # Gemini CLI
-gemini mcp add Swarm -- npx -y @swarmify/agents-mcp
+gemini mcp add Swarm -- npx -y --package git+https://github.com/metyatech/agents-mcp.git#main agents-mcp
 ```
 
 **Dispatching a task:**
@@ -115,13 +115,13 @@ Use the `Spawn` tool exposed by the MCP server:
 
 Use `Status` to check progress and `Stop` to cancel. Use `Tasks` to list all active subagents.
 
-**If @swarmify/agents-mcp is not configured:**
+**If agents-mcp is not configured:**
 
 Stop and report the limitation to the user. Do not simulate or substitute the work yourself.
 
 ### Quota Check
 
-Before selecting an agent, query the `ai-quota` tool (intent: check remaining quota per agent/model). If the tool is unavailable, treat all agents as having quota and proceed with capability routing. The quota check is a best-effort gate, not a hard requirement.
+Before selecting an agent, run an `ai-quota` preflight check via `npx -y @metyatech/ai-quota`. **Never spawn a test task to check quota** — use `ai-quota` exclusively for quota inspection. If `ai-quota` is unavailable, treat all agents as having quota and proceed with capability routing. The preflight is a best-effort gate, not a hard requirement.
 
 ### Routing principles
 
