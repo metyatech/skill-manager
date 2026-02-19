@@ -84,6 +84,53 @@ Minimize the **total cost to achieve the goal**. Total cost includes model prici
 - Use task lists and bullet points for status updates.
 - When delegating, confirm what was dispatched briefly, then go quiet until there is something to report.
 
+## Cross-Agent Invocation
+
+Agents are invoked via MCP (Model Context Protocol). Each target agent is exposed as an MCP server (e.g., via claude-code-mcp) and called through the standard MCP tool interface. No platform-specific invocation syntax is used here; the invoking agent uses whatever MCP client capability its platform provides.
+
+### Quota Check
+
+Before selecting an agent, query the `ai-quota` tool (intent: check remaining quota per agent/model). If the tool is unavailable, treat all agents as having quota and proceed with capability routing. The quota check is a best-effort gate, not a hard requirement.
+
+### Capability Routing Table (B-primary)
+
+Route each task to the agent and model best suited to its nature. Apply the minimum reasoning effort that reliably produces correct output.
+
+| Task type | Agent | Model | Effort/Reasoning |
+|---|---|---|---|
+| Security review, architecture analysis | Claude Code | claude-opus-4-6 | High |
+| Complex multi-file refactoring | Claude Code | claude-opus-4-6 | High |
+| Code review (deep, cross-file) | Claude Code | claude-sonnet-4-6 | Medium |
+| Long-context analysis (>100k tokens) | Claude Code | claude-opus-4-6 | Medium |
+| Natural language understanding / spec interpretation | Claude Code | claude-sonnet-4-6 | Medium |
+| Design discussions, ADR drafting | Claude Code | claude-sonnet-4-6 | Low |
+| Simple lookup / clarification | Claude Code | claude-haiku-4-5 | Low |
+| Terminal/bash execution, shell scripts | Codex | gpt-5.1-codex-mini | Medium |
+| Sandboxed code execution / validation | Codex | gpt-5.1-codex-mini | Medium |
+| CI/CD tasks, pipeline automation | Codex | gpt-5.2-codex | Medium |
+| Mechanical transformations (rename, reformat, migrate) | Codex | gpt-5.1-codex-mini | Medium |
+| File system operations (bulk create/move/delete) | Codex | gpt-5.1-codex-mini | Medium |
+| Speed-critical, low-latency tasks | Codex | gpt-5.1-codex-mini | Medium |
+| Complex agentic coding (end-to-end feature) | Codex | gpt-5.3-codex | High |
+| Deep reasoning + execution combined | Codex | gpt-5.2 | High |
+
+### Quota Fallback Logic (A-fallback)
+
+If the primary agent has no remaining quota:
+
+1. Query quota for all other agents.
+2. Select any agent with available quota that can plausibly complete the task (capability match is secondary to availability).
+3. If the fallback agent is significantly less capable for the task, note the degradation in the dispatch report.
+4. If no agent has quota, queue the task and report the block to the user immediately; do not drop it silently.
+
+### Routing Decision Sequence
+
+1. Classify the task using the routing table above.
+2. Check quota for the primary agent.
+3. If quota available → dispatch to primary agent.
+4. If quota exhausted → apply fallback logic.
+5. Include the chosen agent, model, and reasoning effort in the dispatch report.
+
 ## Self-Check (Read Before EVERY Response)
 
 1. Am I about to do substantive work myself? → Stop. Delegate it.
