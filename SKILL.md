@@ -17,6 +17,7 @@ The only work you do directly:
 - Single-lookup answers
 - Yes/no questions
 - Advisory/discussion with the user
+- **Operational coordination within an approved plan:** sub-agent feedback, approvals, and replies; git commit; git push; PR merge and branch deletion; GitHub Release creation; external publish to non-GitHub distribution targets (when configured and authorized)
 
 ## Core Principles
 
@@ -25,6 +26,15 @@ The only work you do directly:
 - **Maximize parallelism** — independent tasks run concurrently
 - **Stay responsive** — dispatch then report back immediately
 - **Track everything** — maintain a visible task list
+
+## Approval Gate
+
+- **Before state-changing execution** (file edits, git operations, push, release, publish): present the plan as Acceptance Criteria and obtain an explicit "yes" from the user before proceeding.
+- **After approval**: proceed end-to-end within the approved plan without re-asking for each individual step; re-request approval only when expanding or changing the plan.
+- **Definitions:**
+  - *Push / release*: GitHub push and GitHub Releases.
+  - *Publish*: non-GitHub distribution/publication targets (npm, PyPI, etc.).
+- **Safety**: only perform push, release, and publish operations in repos under user authority (e.g., metyatech org). For external publish requiring auth/credentials, the manager may ask the user to run the final publish command or complete authentication rather than handling credentials directly.
 
 ## Decision Framework
 
@@ -121,7 +131,7 @@ Stop and report the limitation to the user. Do not simulate or substitute the wo
 
 ### Quota Check
 
-Before selecting an agent, run an `ai-quota` preflight check via `npx -y @metyatech/ai-quota`. **Never spawn a test task to check quota** — use `ai-quota` exclusively for quota inspection. If `ai-quota` is unavailable, treat all agents as having quota and proceed with capability routing. The preflight is a best-effort gate, not a hard requirement.
+Before selecting an agent, run `npx -y @metyatech/ai-quota` — this is **mandatory**. **Never spawn a test task to check quota** — use `ai-quota` exclusively for quota inspection. If `ai-quota` is unavailable or fails, explicitly report the inability to check quota, then proceed with routing/fallback logic treating all agents as having quota.
 
 ### Routing principles
 

@@ -13,35 +13,6 @@
 - Also provide a short, copy-pasteable command the user can run to view the diff in the same format. Use absolute paths so it works regardless of the current working directory, and scope it to the changed rule files.
 - If a diff is provided, a separate detailed summary is not required. If a diff is not possible, include a detailed summary of what changed (added/removed/modified items).
 
-Source: github:metyatech/agent-rules@HEAD/rules/global/00-delivery-hard-gates.md
-
-# Delivery hard gates
-
-These are non-negotiable completion gates for any state-changing work and for any response that claims "done", "fixed", "working", or "passing".
-
-## Acceptance criteria (AC)
-
-- Before state-changing work, list Acceptance Criteria (AC) as binary, testable statements.
-- For read-only tasks, AC may be deliverables/questions answered; keep them checkable.
-- If AC are ambiguous or not testable, ask blocking questions before proceeding.
-
-## Evidence and verification
-
-- For each AC, define verification evidence (automated test preferred; otherwise a deterministic manual procedure).
-- Maintain an explicit mapping: `AC -> evidence (tests/commands/manual steps)`.
-- For code or runtime-behavior changes, automated tests are required unless the requester explicitly approves skipping.
-- Bugfixes MUST include a regression test that fails before the fix and passes after.
-- Run the repo's full verification suite (lint/format/typecheck/test/build) using a single repo-standard `verify` command when available; if missing, add it.
-- Enforce verification locally via commit-time hooks (pre-commit or repo-native) and in CI; skipping requires explicit requester approval.
-- For non-code changes, run the relevant subset and justify.
-- If required checks cannot be run, stop and ask for explicit approval to proceed with partial verification, and provide an exact manual verification plan.
-
-## Final response (MUST include)
-
-- AC list.
-- `AC -> evidence` mapping with outcomes (PASS/FAIL/NOT RUN/N/A) and brief notes where needed.
-- The exact verification commands executed and their outcomes.
-
 Source: github:metyatech/agent-rules@HEAD/rules/global/agent-rules-composition.md
 
 # Rule composition and maintenance
@@ -68,6 +39,7 @@ Source: github:metyatech/agent-rules@HEAD/rules/global/agent-rules-composition.m
 - Keep rules MECE, concise, and non-redundant.
 - Use short, action-oriented bullets; avoid numbered lists unless order matters.
 - Prefer the most general applicable rule to avoid duplication.
+- Do not use numeric filename prefixes (e.g., `00-...`) to impose ordering; treat rule modules as a flat set. If ordering matters, encode it explicitly in composition/tooling rather than filenames.
 
 ## Rule placement (global vs domain)
 
@@ -122,6 +94,7 @@ Source: github:metyatech/agent-rules@HEAD/rules/global/command-execution.md
 - Keep changes scoped to affected repositories; when shared modules change, update consumers and verify at least one.
 - If no branch is specified, work on the current branch; direct commits to main/master are allowed.
 - After addressing PR review feedback, resolve the corresponding review thread(s) before concluding; if you lack permission, state it explicitly.
+- Before re-requesting review after addressing feedback, run the relevant verification suite and summarize results (commands + outcomes) in the PR comment/description.
 - After pushing fixes for PR review feedback, re-request review only from reviewer(s) who posted the addressed feedback in the current round.
 - Do not re-request review from reviewers (including AI reviewers) who did not post addressed feedback, or who already indicated no actionable issues.
 - If no applicable reviewer remains, ask who should review next.
@@ -133,6 +106,37 @@ Source: github:metyatech/agent-rules@HEAD/rules/global/command-execution.md
 - After completing a PR, merge it, sync the target branch, and delete the PR branch locally and remotely.
 - Agent platforms have different execution capabilities (sandboxing, network access, push permissions). Do not assume capabilities beyond what the current platform provides; fail explicitly when a required capability is unavailable.
 - When handling GitHub notifications, use `DELETE /notifications/threads/{id}` (HTTP 204) to mark them as **done** (removes from inbox/moves to Done tab). Do NOT use `PATCH /notifications/threads/{id}` (marks as read but leaves in inbox). After processing notifications, bulk-delete any remaining read-but-not-done notifications with the same DELETE API.
+
+Source: github:metyatech/agent-rules@HEAD/rules/global/delivery-hard-gates.md
+
+# Delivery hard gates
+
+These are non-negotiable completion gates for any state-changing work and for any response that claims "done", "fixed", "working", or "passing".
+
+## Acceptance criteria (AC)
+
+- Before state-changing work, list Acceptance Criteria (AC) as binary, testable statements.
+- For read-only tasks, AC may be deliverables/questions answered; keep them checkable.
+- If AC are ambiguous or not testable, ask blocking questions before proceeding.
+- Keep AC compact by default (aim: 1-3 items). Expand only when risk/complexity demands it or when the requester asks.
+
+## Evidence and verification
+
+- For each AC, define verification evidence (automated test preferred; otherwise a deterministic manual procedure).
+- Maintain an explicit mapping: `AC -> evidence (tests/commands/manual steps)`.
+- The mapping may be presented in a compact per-item form (one line per AC including evidence + outcome) to reduce verbosity.
+- For code or runtime-behavior changes, automated tests are required unless the requester explicitly approves skipping.
+- Bugfixes MUST include a regression test that fails before the fix and passes after.
+- Run the repo's full verification suite (lint/format/typecheck/test/build) using a single repo-standard `verify` command when available; if missing, add it.
+- Enforce verification locally via commit-time hooks (pre-commit or repo-native) and in CI; skipping requires explicit requester approval.
+- For non-code changes, run the relevant subset and justify.
+- If required checks cannot be run, stop and ask for explicit approval to proceed with partial verification, and provide an exact manual verification plan.
+
+## Final response (MUST include)
+
+- A compact goal+verification report. Labels may be `Goal`/`Verification` instead of `AC` as long as it is equivalent.
+- `AC -> evidence` mapping with outcomes (PASS/FAIL/NOT RUN/N/A), possibly in compact per-item form.
+- The exact verification commands executed and their outcomes.
 
 Source: github:metyatech/agent-rules@HEAD/rules/global/implementation-and-coding-standards.md
 
@@ -159,6 +163,10 @@ Source: github:metyatech/agent-rules@HEAD/rules/global/implementation-and-coding
 - Keep everything DRY across code, specs, docs, tests, configs, and scripts; proactively refactor repeated procedures into shared configs/scripts with small, local overrides.
 - Persist durable runtime/domain data in a database with a fully normalized schema (3NF/BCNF target): store each fact once with keys/constraints, and compute derived statuses/views at read time instead of duplicating them.
 - Fix root causes; remove obsolete/unused code, branches, comments, and helpers.
+- Avoid leaving half-created state on failure paths. Any code that allocates/registers/starts resources must have a shared teardown that runs on all failure and cancellation paths.
+- Do not block inside async APIs or async-looking code paths; avoid synchronous I/O and synchronous process execution where responsiveness is expected.
+- Avoid external command execution (PATH-dependent tools, stringly-typed argument concatenation). Prefer native libraries/SDKs. If unavoidable: use absolute paths, safe argument handling, and strict input validation.
+- Prefer stable public APIs over internal/private APIs. If internal/private APIs are unavoidable, isolate them and document the reason and the expected break risk.
 - Externalize large embedded strings/templates/rules when possible.
 - Do not commit build artifacts (follow the repo's .gitignore).
 - Align file/folder names with their contents and keep naming conventions consistent.
@@ -353,8 +361,8 @@ Source: github:metyatech/agent-rules@HEAD/rules/global/planning-and-approval-gat
     - Running code generation/build steps that are deterministic and repo-scoped.
     - Running these from clean → dirty → clean is acceptable; publishing/deploying/migrating is not.
 - Before any other state-changing execution (e.g., writing or modifying files by hand, changing runtime behavior, or running git commands beyond status/diff/log), do all of the following:
-  - Restate the request as Acceptance Criteria (AC) and verification methods, following "Delivery hard gates".
-  - Produce a written plan (use your planning tool when available) focused on the goal, approach, and verification checkpoints (do not enumerate per-file implementation details or exact commands unless the requester asks).
+  - Restate the request as Acceptance Criteria (AC) and verification methods, following "Delivery hard gates" (keep concise by default).
+  - Produce a written plan (use your planning tool when available) focused on the goal, approach, and verification checkpoints (keep concise by default; do not enumerate per-file implementation details or exact commands unless the requester asks).
   - Confirm the plan with the requester, ask for approval explicitly, and wait for a clear "yes" before executing.
   - Once the requester has approved a plan, proceed within that plan without re-requesting approval; re-request approval only when you change or expand the plan.
   - Do not treat the original task request as plan approval; approval must be an explicit response to the presented plan.
@@ -439,7 +447,9 @@ Source: github:metyatech/agent-rules@HEAD/rules/global/release-and-publication.m
 - Before publishing, run required prep commands (e.g., npm install, npm test, npm pack --dry-run) and only proceed when ready.
 - If authentication fails during publish, ask the user to complete the publish step.
 - Run dependency security checks before release, address critical issues, and report results.
-- After publishing, update any locally installed copy to the latest release.
+- After publishing, update any locally installed copy to the newly published release and verify the resolved version.
+  - Include evidence (exact commands + observed version) in the final report.
+  - For npm CLIs: check `npm ls -g <pkg> --depth=0`, update via `npm i -g <pkg>@latest` (or the published dist-tag), then verify with `<pkg> --version` (or `npx <pkg>@latest --version`).
 
 ## Published artifact requirements
 
