@@ -81,7 +81,8 @@ Minimize the **total cost to achieve the goal**. Total cost includes model prici
 
 ## Error Handling
 
-- If an agent fails, read its output to understand why
+- If an agent fails, call `Status` and treat `agents[].errors` / `agents[].diagnostics.tail_errors` as the primary failure reason.
+- Only open raw logs when needed via `agents[].diagnostics.log_paths.stdout` (e.g., tail the file); avoid manual log hunting.
 - Retry, adjust approach, or escalate to the user
 - Never silently swallow failures
 

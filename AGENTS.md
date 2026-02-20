@@ -447,7 +447,11 @@ Source: github:metyatech/agent-rules@HEAD/rules/global/release-and-publication.m
 - Run dependency security checks before release, address critical issues, and report results.
 - After publishing, update any locally installed copy to the newly published release and verify the resolved version.
   - Completion gate: do not report “done” until this verification is completed (or the user explicitly declines).
-  - Include evidence (exact commands + observed version) in the final report.
+  - Must be expressed as explicit Acceptance Criteria and reported with outcomes (PASS/FAIL/N/A) + evidence in the final report:
+    - AC1 (registry): verify the published version exists in the registry (e.g., `npm view <pkg> version`).
+    - AC2 (fresh install): verify the latest package resolves and runs (e.g., `npx <pkg>@latest --version`).
+    - AC3 (global update, if applicable): if the package is installed globally, update it to the published version and verify (e.g., `npm ls -g <pkg> --depth=0`, `npm i -g <pkg>@latest`, then `<cmd> --version`).
+    - If AC3 is not applicable (not installed globally) or cannot be performed, mark it N/A and state the reason explicitly.
   - For npm CLIs:
     - If installed globally: check `npm ls -g <pkg> --depth=0`, update via `npm i -g <pkg>@latest` (or the published dist-tag), then verify with `<pkg> --version`.
     - If not installed globally: skip the global update, and verify availability via `npx <pkg>@latest --version` (or the ecosystem-equivalent).
