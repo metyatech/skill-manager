@@ -2,6 +2,7 @@
 name: manager
 description: "Task orchestrator that receives work, decomposes it, and dispatches background agents or teams for parallel execution. Use when managing multiple tasks, coordinating agents, or optimizing work distribution. Triggers on: 'manage', 'orchestrate', 'dispatch', 'coordinate', 'delegate'."
 ---
+<!-- markdownlint-disable MD013 -->
 
 # Manager Skill
 
@@ -14,6 +15,7 @@ You are a task orchestrator. You receive work, analyze it, and delegate to agent
 Before responding to ANY message, ask: "Should I delegate this?"
 
 The only work you do directly:
+
 - Single-lookup answers
 - Yes/no questions
 - Advisory/discussion with the user
@@ -102,7 +104,7 @@ Subagents are launched via **agents-mcp** (metyatech's standalone repo) — an M
 
 **One-time setup per platform (run once by the user):**
 
-```
+```bash
 # Claude Code
 claude mcp add --scope user Swarm -- npx -y --package git+https://github.com/metyatech/agents-mcp.git#main agents-mcp
 
@@ -116,6 +118,7 @@ gemini mcp add Swarm -- npx -y --package git+https://github.com/metyatech/agents
 **Dispatching a task:**
 
 Use the `Spawn` tool exposed by the MCP server:
+
 - `prompt`: the full self-contained task description
 - `agent_type`: target agent (`claude`, `codex`, `gemini`, etc.)
 - `model`: explicit model string — **always set this from the routing table** (e.g. `"claude-sonnet-4-6"`, `"gpt-5.2-codex"`). Takes precedence over `effort`.
@@ -148,8 +151,8 @@ All three agents (claude, codex, gemini) run on flat-rate subscriptions with per
 Set `agent_type` and `model` in Spawn from this table.
 
 | Task type | Agent | Model | Rationale |
-|---|---|---|---|
-| **Claude — reasoning & code quality** ||||
+| --- | --- | --- | --- |
+| **Claude — reasoning & code quality** | | | |
 | Security review, vulnerability analysis | claude | claude-sonnet-4-6 | Superior code reasoning; critical correctness |
 | Architecture analysis, design decisions | claude | claude-sonnet-4-6 | Nuanced trade-off judgment |
 | Deep code review (cross-file, subtle bugs) | claude | claude-sonnet-4-6 | Best code comprehension |
@@ -157,7 +160,7 @@ Set `agent_type` and `model` in Spawn from this table.
 | Complex multi-file implementation | claude | claude-sonnet-4-6 | Implementation quality matters |
 | Safety-critical / highest-correctness tasks | claude | claude-opus-4-6 | Maximum capability; reserve for truly critical work |
 | Simple lookup, quick Q&A, clarification | claude | claude-haiku-4-5-20251001 | Fast; conserves Sonnet/Opus quota |
-| **Codex — sandbox & execution** ||||
+| **Codex — sandbox & execution** | | | |
 | Terminal/bash/shell script execution | codex | gpt-5.2-codex | Native containerized sandbox; coding-optimized |
 | Sandboxed code execution / validation | codex | gpt-5.2-codex | Isolated runtime; coding-optimized |
 | Mechanical transforms (rename, reformat, migrate) | codex | gpt-5.1-codex-mini | Lightest codex model; no reasoning needed |
@@ -165,7 +168,7 @@ Set `agent_type` and `model` in Spawn from this table.
 | CI/CD, multi-step pipeline automation | codex | gpt-5.1-codex-max | Reliable multi-step execution |
 | End-to-end feature implementation (well-specified) | codex | gpt-5.3-codex | Latest + most capable codex model |
 | General reasoning in sandbox (claude quota low) | codex | gpt-5.2 | General-purpose GPT with reasoning; not codex-specific; use as claude fallback |
-| **Gemini — large context** ||||
+| **Gemini — large context** | | | |
 | Codebase / document analysis > 200k tokens | gemini | gemini-3-pro-preview | 347k+ token context confirmed |
 | Large log, trace, or data file analysis | gemini | gemini-3-pro-preview | Huge context; complementary to claude quota |
 | Fast summarization of large documents | gemini | gemini-3-flash-preview | Speed + large context; quota-light |
