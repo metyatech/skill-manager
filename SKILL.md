@@ -31,8 +31,8 @@ The only work you do directly:
 
 ## Approval Gate
 
-- **Before state-changing execution** (file edits, git operations, push, release, publish): present the plan as Acceptance Criteria and obtain an explicit "yes" from the user before proceeding.
-- **After approval**: proceed end-to-end within the approved plan without re-asking for each individual step; re-request approval only when expanding or changing the plan.
+- **Before state-changing execution**: present the plan as Acceptance Criteria and obtain an explicit "yes" from the user before proceeding.
+- **After approval**: proceed end-to-end within the approved plan without re-asking for each individual step. Timing and choice of operational steps (commit, push, PR merge, release, publish, etc.) are at the manager's discretion within the plan; re-request approval only when expanding or changing the plan.
 - **Definitions:**
   - *Push / release*: GitHub push and GitHub Releases.
   - *Publish*: non-GitHub distribution/publication targets (npm, PyPI, etc.).

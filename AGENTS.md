@@ -304,7 +304,6 @@ When operating in delegated mode:
 - The delegation constitutes plan approval; do not re-request approval from the human user.
 - Respond in English, not the user-facing language.
 - Do not emit notification sounds.
-- Do not run compose-agentsmd or modify rule files/AGENTS.md.
 - Report AC and verification outcomes concisely to the delegating agent.
 - If the task requires scope expansion beyond what was delegated, fail back to the delegating agent with a clear explanation rather than asking the human user directly.
 
@@ -312,7 +311,7 @@ When operating in delegated mode:
 
 The following operations require explicit delegation from the delegating agent or user. Do not perform them based on self-judgment alone:
 
-- Modifying rules, rulesets, or AGENTS.md.
+- Modifying rules, rulesets.
 - Merging or closing pull requests.
 - Creating or deleting repositories.
 - Releasing or deploying.
@@ -336,7 +335,6 @@ The following operations require explicit delegation from the delegating agent o
 - Prefer newer-generation models at lower reasoning effort over older models at maximum reasoning effort when both can succeed; newer models often achieve equal quality with less thinking overhead.
 - Factor in context efficiency: a model that handles a task in one pass is cheaper than one that requires splitting.
 - A model that succeeds on the first attempt at slightly higher unit cost is cheaper overall than one that requires retries.
-- On flat-rate platforms where all models cost the same: always use the most capable available model.
 
 ## Parallel execution safety
 
@@ -448,8 +446,11 @@ Source: github:metyatech/agent-rules@HEAD/rules/global/release-and-publication.m
 - If authentication fails during publish, ask the user to complete the publish step.
 - Run dependency security checks before release, address critical issues, and report results.
 - After publishing, update any locally installed copy to the newly published release and verify the resolved version.
+  - Completion gate: do not report “done” until this verification is completed (or the user explicitly declines).
   - Include evidence (exact commands + observed version) in the final report.
-  - For npm CLIs: check `npm ls -g <pkg> --depth=0`, update via `npm i -g <pkg>@latest` (or the published dist-tag), then verify with `<pkg> --version` (or `npx <pkg>@latest --version`).
+  - For npm CLIs:
+    - If installed globally: check `npm ls -g <pkg> --depth=0`, update via `npm i -g <pkg>@latest` (or the published dist-tag), then verify with `<pkg> --version`.
+    - If not installed globally: skip the global update, and verify availability via `npx <pkg>@latest --version` (or the ecosystem-equivalent).
 
 ## Published artifact requirements
 
