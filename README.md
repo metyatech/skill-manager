@@ -31,6 +31,12 @@ This skill is most useful when your client can delegate to multiple coding agent
 
 A practical Windows-friendly broker is `mcp-rubber-duck`, which can expose CLI coding agents (Claude Code, Codex, Gemini CLI, etc.) through an MCP server.
 
+### Install mcp-rubber-duck
+
+```bash
+npm install -g mcp-rubber-duck
+```
+
 ### Example MCP Server Config
 
 Most MCP-capable clients support a config similar to:
