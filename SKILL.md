@@ -159,7 +159,7 @@ Set `agent_type` and `model` in Spawn from this table.
 | Deep code review (cross-file, subtle bugs) | claude | claude-sonnet-4-6 | high | Best code comprehension |
 | NL understanding, spec/requirement interpretation | claude | claude-sonnet-4-6 | medium | Lowest hallucination risk for ambiguous text |
 | Complex multi-file implementation | claude | claude-sonnet-4-6 | medium | Implementation quality matters |
-| Safety-critical / highest-correctness tasks | claude | claude-opus-4-6 | xhigh | Maximum capability; reserve for truly critical work |
+| Safety-critical / highest-correctness tasks | claude | claude-opus-4-6 | high | Maximum capability; reserve for truly critical work |
 | Simple lookup, quick Q&A, clarification | claude | claude-haiku-4-5-20251001 | — | Fast; conserves Sonnet/Opus quota |
 | **Codex — sandbox & execution** | | | | |
 | Terminal/bash/shell script execution | codex | gpt-5.2-codex | medium | Native containerized sandbox; coding-optimized |
