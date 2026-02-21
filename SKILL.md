@@ -135,7 +135,7 @@ Stop and report the limitation to the user. Do not simulate or substitute the wo
 
 ### Quota Check
 
-Before selecting an agent, run `npx -y @metyatech/ai-quota` — this is **mandatory**. **Never spawn a test task to check quota** — use `ai-quota` exclusively for quota inspection. If `ai-quota` is unavailable or fails, explicitly report the inability to check quota, then proceed with routing/fallback logic treating all agents as having quota.
+Before selecting or spawning any sub-agent, run `npx -y @metyatech/ai-quota` — **mandatory**. If `ai-quota` is unavailable or fails, explicitly report the inability and **STOP** — do not spawn any sub-agent. No fallback routing. **Never spawn a test task to validate quota** — use `ai-quota` exclusively for quota inspection.
 
 ### Routing principles
 
