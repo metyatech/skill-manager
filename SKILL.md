@@ -164,11 +164,11 @@ Set `agent_type` and `model` in Spawn from this table.
 | **Codex — sandbox & execution** | | | | |
 | Terminal/bash/shell script execution | codex | gpt-5.2-codex | medium | Native containerized sandbox; coding-optimized |
 | Sandboxed code execution / validation | codex | gpt-5.2-codex | medium | Isolated runtime; coding-optimized |
-| Mechanical transforms (rename, reformat, migrate) | codex | gpt-5.1-codex-mini | low | Lightest codex model; no reasoning needed |
-| File system bulk operations | codex | gpt-5.1-codex-mini | low | Shell-level; lightest model sufficient |
-| CI/CD, multi-step pipeline automation | codex | gpt-5.1-codex-max | medium | Reliable multi-step execution |
-| End-to-end feature implementation (well-specified) | codex | gpt-5.3-codex | high | Latest + most capable codex model |
-| General reasoning in sandbox (claude quota low) | codex | gpt-5.2 | medium | General-purpose GPT with reasoning; not codex-specific; use as claude fallback |
+| Mechanical transforms (rename, reformat, migrate) | codex | gpt-5.1-codex-mini | low | Lightest codex model; max effort is high |
+| File system bulk operations | codex | gpt-5.1-codex-mini | low | Shell-level; max effort is high |
+| CI/CD, multi-step pipeline automation | codex | gpt-5.1-codex-max | high | Reliable multi-step execution |
+| End-to-end feature implementation (well-specified) | codex | gpt-5.3-codex | xhigh | Latest + most capable codex model |
+| General reasoning in sandbox (claude quota low) | codex | gpt-5.2 | high | General-purpose GPT with reasoning; not codex-specific; use as claude fallback |
 | **Gemini — large context** | | | | |
 | Codebase / document analysis > 200k tokens | gemini | gemini-3-pro-preview | — | 347k+ token context confirmed; effort ignored |
 | Large log, trace, or data file analysis | gemini | gemini-3-pro-preview | — | Huge context; complementary to claude quota |
