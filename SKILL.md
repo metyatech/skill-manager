@@ -122,8 +122,8 @@ Use the `Spawn` tool exposed by the MCP server:
 
 - `prompt`: the full self-contained task description
 - `agent_type`: target agent (`claude`, `codex`, `gemini`, etc.)
-- `model`: explicit model string — **always set this from the routing table** (e.g. `"claude-sonnet-4-6"`, `"gpt-5.2-codex"`). Takes precedence over `effort`.
-- `effort`: fallback tier (`fast` / `default` / `detailed`) — only use when `model` is not specified.
+- `model`: explicit model string — **always set this from the routing table** (e.g. `"claude-sonnet-4-6"`, `"gpt-5.2-codex"`).
+- `effort`: optional reasoning effort string passed to the agent CLI. For Claude: `--effort <value>` (`low`/`medium`/`high`). For Codex: `-c model_reasoning_effort="<value>"`. Gemini and Copilot ignore it. Set from the routing table; omit when not needed.
 
 **Monitoring:**
 
@@ -151,28 +151,28 @@ All three agents (claude, codex, gemini) run on flat-rate subscriptions with per
 
 Set `agent_type` and `model` in Spawn from this table.
 
-| Task type | Agent | Model | Rationale |
-| --- | --- | --- | --- |
-| **Claude — reasoning & code quality** | | | |
-| Security review, vulnerability analysis | claude | claude-sonnet-4-6 | Superior code reasoning; critical correctness |
-| Architecture analysis, design decisions | claude | claude-sonnet-4-6 | Nuanced trade-off judgment |
-| Deep code review (cross-file, subtle bugs) | claude | claude-sonnet-4-6 | Best code comprehension |
-| NL understanding, spec/requirement interpretation | claude | claude-sonnet-4-6 | Lowest hallucination risk for ambiguous text |
-| Complex multi-file implementation | claude | claude-sonnet-4-6 | Implementation quality matters |
-| Safety-critical / highest-correctness tasks | claude | claude-opus-4-6 | Maximum capability; reserve for truly critical work |
-| Simple lookup, quick Q&A, clarification | claude | claude-haiku-4-5-20251001 | Fast; conserves Sonnet/Opus quota |
-| **Codex — sandbox & execution** | | | |
-| Terminal/bash/shell script execution | codex | gpt-5.2-codex | Native containerized sandbox; coding-optimized |
-| Sandboxed code execution / validation | codex | gpt-5.2-codex | Isolated runtime; coding-optimized |
-| Mechanical transforms (rename, reformat, migrate) | codex | gpt-5.1-codex-mini | Lightest codex model; no reasoning needed |
-| File system bulk operations | codex | gpt-5.1-codex-mini | Shell-level; lightest model sufficient |
-| CI/CD, multi-step pipeline automation | codex | gpt-5.1-codex-max | Reliable multi-step execution |
-| End-to-end feature implementation (well-specified) | codex | gpt-5.3-codex | Latest + most capable codex model |
-| General reasoning in sandbox (claude quota low) | codex | gpt-5.2 | General-purpose GPT with reasoning; not codex-specific; use as claude fallback |
-| **Gemini — large context** | | | |
-| Codebase / document analysis > 200k tokens | gemini | gemini-3-pro-preview | 347k+ token context confirmed |
-| Large log, trace, or data file analysis | gemini | gemini-3-pro-preview | Huge context; complementary to claude quota |
-| Fast summarization of large documents | gemini | gemini-3-flash-preview | Speed + large context; quota-light |
+| Task type | Agent | Model | Effort | Rationale |
+| --- | --- | --- | --- | --- |
+| **Claude — reasoning & code quality** | | | | |
+| Security review, vulnerability analysis | claude | claude-sonnet-4-6 | high | Superior code reasoning; critical correctness |
+| Architecture analysis, design decisions | claude | claude-sonnet-4-6 | high | Nuanced trade-off judgment |
+| Deep code review (cross-file, subtle bugs) | claude | claude-sonnet-4-6 | high | Best code comprehension |
+| NL understanding, spec/requirement interpretation | claude | claude-sonnet-4-6 | medium | Lowest hallucination risk for ambiguous text |
+| Complex multi-file implementation | claude | claude-sonnet-4-6 | medium | Implementation quality matters |
+| Safety-critical / highest-correctness tasks | claude | claude-opus-4-6 | high | Maximum capability; reserve for truly critical work |
+| Simple lookup, quick Q&A, clarification | claude | claude-haiku-4-5-20251001 | — | Fast; conserves Sonnet/Opus quota |
+| **Codex — sandbox & execution** | | | | |
+| Terminal/bash/shell script execution | codex | gpt-5.2-codex | medium | Native containerized sandbox; coding-optimized |
+| Sandboxed code execution / validation | codex | gpt-5.2-codex | medium | Isolated runtime; coding-optimized |
+| Mechanical transforms (rename, reformat, migrate) | codex | gpt-5.1-codex-mini | low | Lightest codex model; no reasoning needed |
+| File system bulk operations | codex | gpt-5.1-codex-mini | low | Shell-level; lightest model sufficient |
+| CI/CD, multi-step pipeline automation | codex | gpt-5.1-codex-max | medium | Reliable multi-step execution |
+| End-to-end feature implementation (well-specified) | codex | gpt-5.3-codex | high | Latest + most capable codex model |
+| General reasoning in sandbox (claude quota low) | codex | gpt-5.2 | medium | General-purpose GPT with reasoning; not codex-specific; use as claude fallback |
+| **Gemini — large context** | | | | |
+| Codebase / document analysis > 200k tokens | gemini | gemini-3-pro-preview | — | 347k+ token context confirmed; effort ignored |
+| Large log, trace, or data file analysis | gemini | gemini-3-pro-preview | — | Huge context; complementary to claude quota |
+| Fast summarization of large documents | gemini | gemini-3-flash-preview | — | Speed + large context; quota-light |
 
 ### Quota Fallback Logic
 
@@ -187,9 +187,9 @@ If the primary agent has no remaining quota:
 
 1. Classify the task using the routing table above.
 2. Check quota for the primary agent.
-3. If quota available → dispatch with `agent_type` and `model` from the table.
+3. If quota available → dispatch with `agent_type`, `model`, and `effort` from the table (omit `effort` when column shows —).
 4. If quota exhausted → apply fallback logic.
-5. Include the chosen agent and model in the dispatch report.
+5. Include the chosen agent, model, and effort in the dispatch report.
 
 ## Self-Check (Read Before EVERY Response)
 
