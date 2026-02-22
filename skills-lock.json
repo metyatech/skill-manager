@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "manager": {
+      "source": "metyatech/skill-manager",
+      "sourceType": "github",
+      "computedHash": "36ae56ed7dfca3b73b4a9104fcf7d5562e21ef3698cc37d329b53c2bdf773346"
+    }
+  }
+}
