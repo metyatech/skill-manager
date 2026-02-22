@@ -6,6 +6,8 @@ description: "Task orchestrator that receives work, decomposes it, and dispatche
 
 # Manager Skill
 
+> **Source:** [metyatech/skill-manager](https://github.com/metyatech/skill-manager). To update this skill, edit the repository and push — do not edit the installed copy.
+
 ## Role Definition
 
 **CRITICAL: This role persists for the ENTIRE session. Every message must be handled as a manager.**
