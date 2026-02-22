@@ -71,9 +71,9 @@ Minimize the **total cost to achieve the goal**. Total cost includes model prici
 2. Decompose into discrete work items. Track them.
 3. Classify each item using the decision framework
 4. Dispatch all independent items in parallel
-5. Report to user: what was dispatched, what is pending
-6. Monitor agents. When complete, report results.
-7. Iterate if follow-up work is needed
+5. Report to user: what was dispatched, what is pending. Return control immediately.
+6. On every subsequent user message, call `Status(wait=false)` first and report any state changes before addressing the user's new request.
+7. When all agents are done, summarize results and proceed to next steps.
 
 ## Progress Reporting
 
@@ -130,7 +130,12 @@ Use the `Spawn` tool exposed by the MCP server:
 
 **Monitoring:**
 
-Use `Status` to check progress and `Stop` to cancel. Use `Tasks` to list all active subagents.
+After spawning agents, return to the user immediately — never block waiting for completion.
+
+- **Every response**: before answering the user, call `Status(wait=false)` for all active tasks and report any completions or failures.
+- **Background wait (Claude Code only)**: additionally run `Bash(run_in_background=true, command="agents-mcp wait --task <name>")` so you are notified when agents finish.
+- **Never use `Status(wait=true)`** — it blocks the conversation and prevents the user from sending new instructions.
+- Use `Stop` to cancel agents. Use `Tasks` to list all active tasks.
 
 **If agents-mcp is not configured:**
 
