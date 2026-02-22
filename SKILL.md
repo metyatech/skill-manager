@@ -62,7 +62,6 @@ Minimize the **total cost to achieve the goal**. Total cost includes model prici
 1. Assess task complexity (mechanical / moderate / complex / architectural).
 2. Identify the cheapest model + reasoning level combination likely to succeed on the first attempt.
 3. If uncertain, start one tier up rather than risking a retry.
-4. On flat-rate platforms where all models cost the same: always use the most capable model.
 
 ## Dispatch Workflow
 
@@ -124,8 +123,8 @@ Use the `Spawn` tool exposed by the MCP server:
 
 - `prompt`: the full self-contained task description
 - `agent_type`: target agent (`claude`, `codex`, `gemini`, etc.)
-- `model`: explicit model string — **always set this from the routing table** (e.g. `"claude-sonnet-4-6"`, `"gpt-5.2-codex"`).
-- `effort`: optional reasoning effort string passed to the agent CLI. For Claude: `--effort <value>` (`low`/`medium`/`high`/`xhigh`). For Codex: `-c model_reasoning_effort="<value>"`. Gemini and Copilot ignore it. Set from the routing table; omit when not needed.
+- `model`: explicit model string — **always set this from the Model Inventory** (e.g. `"claude-sonnet-4-6"`, `"gpt-5.3-codex"`).
+- `effort`: optional reasoning effort string passed to the agent CLI. For Claude: `--effort <value>` (`low`/`medium`/`high`). For Codex: `-c model_reasoning_effort="<value>"` (`low`/`medium`/`high`/`xhigh`; gpt-5.1-codex-mini: `medium`/`high` only). Gemini and Copilot ignore it. Set from the Model Inventory; omit when not needed.
 
 **Monitoring:**
 
@@ -139,59 +138,109 @@ Stop and report the limitation to the user. Do not simulate or substitute the wo
 
 Before selecting or spawning any sub-agent, run `npx -y @metyatech/ai-quota` — **mandatory**. If `ai-quota` is unavailable or fails, explicitly report the inability and **STOP** — do not spawn any sub-agent. No fallback routing. **Never spawn a test task to validate quota** — use `ai-quota` exclusively for quota inspection.
 
-### Routing principles
+### Routing Principles
 
-All three agents (claude, codex, gemini) run on flat-rate subscriptions with periodic quota limits. Cost is not a differentiator; route by **task affinity** and **quota conservation**.
+All four agents (claude, codex, gemini, copilot) operate on independent flat-rate subscriptions with periodic quota limits. Route by **model quality**, **quota conservation**, and **quota distribution**.
 
-- **claude** — reasoning quality, code comprehension, nuanced judgment
-- **codex** — native sandboxed execution, shell/file system operations
-- **gemini** — massive context window (347k+ tokens confirmed)
-- **Quota conservation** — use lighter models for simple tasks to preserve quota for complex ones
-- **Quota distribution** — spread work across agents; avoid concentrating all tasks on one agent
+- All agents can execute code, modify files, and perform multi-step tasks. Route by model quality and quota, not by execution capability.
+- Quota pools are independent across agents. Spread work to maximize total throughput.
+- For large-context tasks (>200k tokens), prefer Gemini (1M token context).
+- For trivial tasks, prefer Copilot free-tier models (0x quota) before consuming other agents' quota.
+- When multiple agents can handle a task equally well, prefer the one with the most remaining quota.
+- Copilot model performance relative to native CLIs is unverified; monitor quality and escalate to native agents if results are insufficient.
 
-### Capability Routing Table
+### Model Inventory
 
-Set `agent_type` and `model` in Spawn from this table.
+Update this table when models change. **Last reviewed: 2026-02-22.**
 
-| Task type | Agent | Model | Effort | Rationale |
-| --- | --- | --- | --- | --- |
-| **Claude — reasoning & code quality** | | | | |
-| Security review, vulnerability analysis | claude | claude-sonnet-4-6 | high | Superior code reasoning; critical correctness |
-| Architecture analysis, design decisions | claude | claude-sonnet-4-6 | high | Nuanced trade-off judgment |
-| Deep code review (cross-file, subtle bugs) | claude | claude-sonnet-4-6 | high | Best code comprehension |
-| NL understanding, spec/requirement interpretation | claude | claude-sonnet-4-6 | medium | Lowest hallucination risk for ambiguous text |
-| Complex multi-file implementation | claude | claude-sonnet-4-6 | medium | Implementation quality matters |
-| Safety-critical / highest-correctness tasks | claude | claude-opus-4-6 | high | Maximum capability; reserve for truly critical work |
-| Simple lookup, quick Q&A, clarification | claude | claude-haiku-4-5-20251001 | — | Fast; conserves Sonnet/Opus quota |
-| **Codex — sandbox & execution** | | | | |
-| Terminal/bash/shell script execution | codex | gpt-5.2-codex | medium | Native containerized sandbox; coding-optimized |
-| Sandboxed code execution / validation | codex | gpt-5.2-codex | medium | Isolated runtime; coding-optimized |
-| Mechanical transforms (rename, reformat, migrate) | codex | gpt-5.1-codex-mini | low | Lightest codex model; max effort is high |
-| File system bulk operations | codex | gpt-5.1-codex-mini | low | Shell-level; max effort is high |
-| CI/CD, multi-step pipeline automation | codex | gpt-5.1-codex-max | high | Reliable multi-step execution |
-| End-to-end feature implementation (well-specified) | codex | gpt-5.3-codex | xhigh | Latest + most capable codex model |
-| General reasoning in sandbox (claude quota low) | codex | gpt-5.2 | high | General-purpose GPT with reasoning; not codex-specific; use as claude fallback |
-| **Gemini — large context** | | | | |
-| Codebase / document analysis > 200k tokens | gemini | gemini-3-pro-preview | — | 347k+ token context confirmed; effort ignored |
-| Large log, trace, or data file analysis | gemini | gemini-3-pro-preview | — | Huge context; complementary to claude quota |
-| Fast summarization of large documents | gemini | gemini-3-flash-preview | — | Speed + large context; quota-light |
+Classify each task into a tier, then pick an agent with available quota and select the ★ preferred model for that tier. Fall back to other models in the same tier when the preferred model's agent has no quota.
+
+**Tier definitions:**
+
+- **Free** — Trivial lookups, simple Q&A, straightforward single-file edits. Copilot only.
+- **Light** — Mechanical transforms, formatting, simple implementations, quick clarifications.
+- **Standard** — General implementation, code review, multi-file changes, most development work.
+- **Heavy** — Architecture decisions, safety-critical code, complex multi-step reasoning.
+- **Large Context** — Tasks requiring >200k token input.
+
+#### Claude
+
+| Tier | Model | Effort | Notes |
+|------|-------|--------|-------|
+| Light | claude-haiku-4-5-20251001 | — | Effort not supported; SWE-bench 73% |
+| Standard | claude-sonnet-4-6 | medium | ★ Default; SWE-bench 80% |
+| Heavy | claude-opus-4-6 | high | SWE-bench 81%; `max` effort for hardest tasks |
+
+Effort levels: `low` / `medium` / `high` (Opus also supports `max`).
+
+#### Codex
+
+| Tier | Model | Effort | Notes |
+|------|-------|--------|-------|
+| Light | gpt-5.1-codex-mini | medium | `medium`/`high` only |
+| Standard | gpt-5.3-codex | medium | ★ Latest flagship; SWE-bench Pro 57% |
+| Standard | gpt-5.2-codex | medium | Previous gen; SWE-bench Pro 56% |
+| Standard | gpt-5.2 | medium | General-purpose; best non-codex reasoning; SWE-bench 80% |
+| Heavy | gpt-5.3-codex | xhigh | ★ Best codex at max effort |
+| Heavy | gpt-5.1-codex-max | xhigh | Extended reasoning; context compaction |
+| Heavy | gpt-5.2-codex | xhigh | Alternative |
+| Heavy | gpt-5.2 | xhigh | General reasoning fallback |
+
+Effort levels: `low` / `medium` / `high` / `xhigh` (gpt-5.1-codex-mini: `medium` / `high` only).
+
+#### Gemini
+
+| Tier | Model | Effort | Notes |
+|------|-------|--------|-------|
+| Light | gemini-3-flash-preview | — | SWE-bench 78%; strong despite Light tier |
+| Standard | gemini-3-pro-preview | — | ★ 1M token context; SWE-bench 76% |
+| Large Context | gemini-3-pro-preview | — | >200k token tasks; 1M context |
+
+Effort not supported. When `gemini-3-1-pro-preview` becomes available in Gemini CLI, promote it to Standard (SWE-bench 81%).
+
+#### Copilot
+
+Copilot charges different quota per model. Prefer lower-multiplier models when task complexity allows. Effort is not configurable (ignored).
+
+| Tier | Model | Quota | Notes |
+|------|-------|-------|-------|
+| Free | gpt-5-mini | 0x | ★ SWE-bench ~70%; simple tasks |
+| Free | gpt-4.1 | 0x | 1M context; SWE-bench 55% |
+| Light | claude-haiku-4-5 | 0.33x | ★ SWE-bench 73% |
+| Light | gpt-5.1-codex-mini | 0.33x | Mechanical transforms |
+| Standard | claude-sonnet-4-6 | 1x | ★ Default; SWE-bench 80% |
+| Standard | gpt-5.3-codex | 1x | Latest codex flagship |
+| Standard | gpt-5.2 | 1x | Best general reasoning; SWE-bench 80% |
+| Standard | gpt-5.2-codex | 1x | Agentic coding |
+| Standard | gpt-5.1-codex-max | 1x | Extended reasoning; compaction |
+| Standard | claude-sonnet-4-5 | 1x | SWE-bench 77%; prefer 4.6 |
+| Standard | gpt-5.1-codex | 1x | SWE-bench 77% |
+| Standard | gpt-5.1 | 1x | General purpose; SWE-bench ~76% |
+| Standard | gemini-3-pro | 1x | 1M context; SWE-bench 76% |
+| Standard | claude-sonnet-4 | 1x | Legacy; SWE-bench 73%; last choice |
+| Heavy | claude-opus-4-6 | 3x | ★ SWE-bench 81% |
+| Heavy | claude-opus-4-5 | 3x | SWE-bench 81%; prefer 4.6 |
+| — | claude-opus-4-6 fast | 30x | Avoid; excessive quota cost |
 
 ### Quota Fallback Logic
 
 If the primary agent has no remaining quota:
 
-1. Query quota for all other agents.
-2. Select any agent with available quota that can plausibly complete the task.
-3. If the fallback is significantly less capable, note the degradation in the dispatch report.
-4. If no agent has quota, queue the task and report the block immediately; do not drop silently.
+1. Query quota for all four agents (claude, codex, gemini, copilot).
+2. Select any agent with available quota that has a model at the required tier.
+3. For Copilot fallback, prefer lower-multiplier models to conserve quota.
+4. If the fallback model is significantly less capable, note the degradation in the dispatch report.
+5. If no agent has quota, queue the task and report the block immediately; do not drop silently.
 
 ### Routing Decision Sequence
 
-1. Classify the task using the routing table above.
-2. Check quota for the primary agent.
-3. If quota available → dispatch with `agent_type`, `model`, and `effort` from the table (omit `effort` when column shows —).
-4. If quota exhausted → apply fallback logic.
-5. Include the chosen agent, model, and effort in the dispatch report.
+1. Classify the task tier (Free / Light / Standard / Heavy / Large Context).
+2. For Free tier: dispatch to Copilot with a 0x model. Skip quota check.
+3. For other tiers: check quota for all agents via `ai-quota`.
+4. Pick the agent with available quota at the required tier; prefer the agent with the most remaining quota when multiple qualify.
+5. Set `agent_type`, `model`, and `effort` from the Model Inventory (omit `effort` when column shows —).
+6. If primary choice has no quota: apply fallback logic.
+7. Include the chosen agent, model, tier, and effort in the dispatch report.
 
 ## Self-Check (Read Before EVERY Response)
 
