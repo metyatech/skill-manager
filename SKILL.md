@@ -103,6 +103,8 @@ Minimize the **total cost to achieve the goal**. Total cost includes model prici
 
 Subagents are launched via **agents-mcp** (metyatech's standalone repo) — an MCP server that works uniformly from Claude Code, Codex, and Gemini CLI.
 
+- **Mandatory**: always use agents-mcp for dispatching sub-agents. Do not use platform-built-in subagent spawners, which run agents at the orchestrator's own model tier and bypass cost-optimized routing from the capability table.
+
 **One-time setup per platform (run once by the user):**
 
 ```bash
