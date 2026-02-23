@@ -1,4 +1,5 @@
 {
-  "source": "github:metyatech/agent-rules",
-  "output": "AGENTS.md"
+  "source": "github:metyatech/agent-rules@HEAD",
+  "global": true,
+  "domains": []
 }

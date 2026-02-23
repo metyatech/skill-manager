@@ -13,11 +13,10 @@ npx skills add metyatech/skill-manager
 Invoke the skill using your platform's slash command syntax:
 
 | Platform | Command |
-|---|---|
+| --- | --- |
 | Claude Code | `/manager` |
 | Codex | `$manager` |
 | Other platforms | See your platform's skill invocation syntax |
-
 
 ## What the Manager Does
 
