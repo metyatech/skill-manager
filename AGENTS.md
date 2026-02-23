@@ -88,6 +88,11 @@ Source: github:metyatech/agent-rules@HEAD/rules/global/autonomous-operations.md
 - Prefer asynchronous, low-friction control channels (GitHub Issues/PR comments) unless a repository mandates another.
 - Design autonomous workflows for high volume: queue requests, set concurrency limits, and auto-throttle to prevent overload.
 
+## GitHub notifications
+
+- After addressing a GitHub notification (CI failure fixed, PR reviewed, issue resolved), mark it as done so the user's inbox stays clean.
+- If the gh token lacks the required scope, request the user to add it before proceeding.
+
 Source: github:metyatech/agent-rules@HEAD/rules/global/cli-standards.md
 
 # CLI standards

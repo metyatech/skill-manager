@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-02-23
+
+### Changed
+
+- Moved model inventory and routing to global rules (refactor: no functional changes to skill behavior).
+- Added repository infrastructure for AGENTS.md compliance (markdownlint CI, freshness check, `.markdownlintignore`).
+- Fixed markdownlint CLI invocation: use `--ignore` flag and proper AGENTS.md exclusion.
+- Tracked `skills-lock.json` for reproducible skill installs.
+- Regenerated AGENTS.md with latest global rules (GitHub notifications section added).
+
 ## [0.2.0] - 2026-02-22
 
 ### Changed
