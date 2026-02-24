@@ -16,80 +16,46 @@ Source: github:metyatech/agent-rules@HEAD/rules/global/agent-rules-composition.m
 
 # Rule composition and maintenance
 
-## Scope and composition
+- AGENTS.md is self-contained; place at project root. Shared rules centrally; project-local only for truly local policies.
+- Before work in a repo with `agent-ruleset.json`, run `compose-agentsmd` to refresh AGENTS.md.
+- Pre-commit hooks run `compose-agentsmd --compose` and auto-stage. Do not fail commits on drift or add freshness checks to CI.
 
-- AGENTS.md is self-contained; do not rely on parent/child AGENTS for inheritance or precedence.
-- Maintain shared rules centrally and compose per project; use project-local rules only for truly local policies.
-- Place AGENTS.md at the project root; only add another AGENTS.md for nested independent projects.
-- Before doing any work in a repository that contains `agent-ruleset.json`, run `compose-agentsmd` in that repository to refresh its AGENTS.md and ensure rules are current.
+## Update and editing
 
-## AGENTS.md freshness
+- Never edit AGENTS.md directly; update source rules and regenerate. "Update rules" = update module/ruleset, then regenerate.
+- Persistent user instructions → encode in appropriate module (global vs local) in the same change set.
+- New repos must meet all global rules (AGENTS.md, CI, linting, community health, docs, scanning) before reporting complete.
+- Update rulesets for missing domain rules before proceeding. Omit AGENTS.md diffs unless asked.
+- Infer core intent; prefer global over project-local. Keep rules MECE, concise, non-redundant, action-oriented ("do X", "never Z"). No hedging or numeric filename prefixes.
+- Placement: based on where needed. Any-workspace → global; domain only for opt-in repos.
 
-- Pre-commit hooks should run `compose-agentsmd --compose` and stage any AGENTS.md changes automatically. Do not fail the commit on AGENTS.md drift; let the updated file be included in the commit.
-- Do not add AGENTS.md freshness checks to CI. AGENTS.md is generated from external rule sources; checking it in CI creates cross-repo coupling. Pre-commit hooks are sufficient.
+## Size budget
 
-## Update policy
-
-- Never edit AGENTS.md directly; update source rules and regenerate AGENTS.md.
-- A request to "update rules" means: update the appropriate rule module and ruleset, then regenerate AGENTS.md.
-- If the user gives a persistent instruction (e.g., "always", "must"), encode it in the appropriate module (global vs local).
-- When acknowledging a new persistent instruction, update the rule module in the same change set and regenerate AGENTS.md.
-- When creating a new repository, verify that it meets all applicable global rules before reporting completion: rule files and AGENTS.md, CI workflow, linting/formatting, community health files, documentation, and dependency scanning. Do not treat repository creation as complete until full compliance is verified.
-- When updating rules, infer the core intent; if it is a global policy, record it in global rules rather than project-local rules.
-- If a task requires domain rules not listed in agent-ruleset.json, update the ruleset to include them and regenerate AGENTS.md before proceeding.
-- Do not include composed `AGENTS.md` diffs in the final response unless the user explicitly asks for them.
-
-## Editing standards
-
-- Keep rules MECE, concise, and non-redundant.
-- Use short, action-oriented bullets; avoid numbered lists unless order matters.
-- Prefer the most general applicable rule to avoid duplication.
-- Write rules as clear directives that prescribe specific behavior ("do X", "always Y", "never Z"). Do not use hedging language ("may", "might", "could", "consider") — if a behavior is required, state it as a requirement; if it is not required, omit it.
-- Do not use numeric filename prefixes (e.g., `00-...`) to impose ordering; treat rule modules as a flat set. If ordering matters, encode it explicitly in composition/tooling rather than filenames.
-
-## Rule placement (global vs domain)
-
-- Decide rule placement based on **where the rule is needed**, not what topic it covers.
-- If the rule could be needed from any workspace or repository, make it global.
-- Only use domain rules when the rule is strictly relevant inside repositories that opt in to that domain.
-- Before choosing domain, verify: "Will this rule ever be needed when working from a workspace that does not include this domain?" If yes, make it global.
-
-## Rules vs skills
-
-- **Rules** = invariants/constraints (always loaded, concise). **Skills** = procedures/workflows (on-demand, detailed). When a rule grows with procedural content, extract to a skill.
+- Total ≤350 lines; per-module ≤30 (soft). Overage → extract procedural content to skills.
+- **Rules** = invariants (always loaded, concise). **Skills** = procedures (on-demand, detailed).
 
 Source: github:metyatech/agent-rules@HEAD/rules/global/autonomous-operations.md
 
 # Autonomous operations
 
 - Optimize for minimal human effort; default to automation over manual steps.
-- Drive work from the desired outcome: choose the highest-quality safe path that satisfies the requested quality/ideal bar, and execute end-to-end.
-- Treat speed as a secondary optimization; never trade down correctness, safety, robustness, or verifiability unless the requester explicitly approves that tradeoff.
-- Assume end-to-end autonomy for repository operations (issue triage, PRs, direct pushes to main/master, merges, releases, repo admin) only within repositories under the user's control (e.g., owned by metyatech or where the user has explicit maintainer/push authority), unless the user restricts scope; for third-party repos, require explicit user request before any of these operations.
-- Do not preserve backward compatibility unless explicitly requested; avoid legacy aliases and compatibility shims by default.
-- When work reveals rule gaps, redundancy, or misplacement, proactively update rule modules/rulesets (including moves/renames) and regenerate AGENTS.md without waiting for explicit user requests.
-- Continuously evaluate your own behavior, rules, and skills during operation. When you identify a gap, ambiguity, inefficiency, or missing guidance — whether through self-observation, task friction, or comparison with ideal behavior — update the appropriate rule or skill immediately without waiting for the user to notice or point out the issue. After each task, assess whether avoidable mistakes occurred and apply corrections in the same task. In delegated mode, include improvement suggestions in the task result.
-- When the user points out a behavior failure, treat it as a systemic gap: fix the immediate issue, update rules to prevent recurrence, and identify whether the same gap pattern applies elsewhere — all in a single action. Do not wait for the user to enumerate each corrective step; a single observation implies all necessary corrections.
-- If you state a persistent workflow change (e.g., `from now on`, `I'll always`), immediately propose the corresponding rule update and request approval in the same task; do not leave it as an unrecorded promise. This is a blocking gate: do not proceed to the next task or close the response until the rule update is committed or explicitly deferred by the requester. When operating under a multi-agent-delegation model, follow that rule module's guidance on restricted operations before proposing changes.
-- Because session memory resets between tasks, treat rule files as persistent memory; when any issue or avoidable mistake occurs, update rules in the same task to prevent recurrence.
-- Never apply rules from memory of previous sessions; always reference the current AGENTS.md. If unsure whether a rule still applies, re-read it.
-- Treat these rules as the source of truth; do not override them with repository conventions. If a repo conflicts, update the repo to comply or update the rules to encode the exception; do not make undocumented exceptions.
-
-## Skill role persistence
-
-- When the `manager` skill is invoked in a session, treat its role as session-scoped and continue operating as a manager/orchestrator for the remainder of the session.
-- Do not revert to a direct-implementation posture mid-session unless the user explicitly asks to stop using the manager role/skill or selects a different role.
-
-- When something is unclear, investigate to resolve it; do not proceed with unresolved material uncertainty. If still unclear, ask and include what you checked.
-- Do not proceed based on assumptions or guesses without explicit user approval; hypotheses may be discussed but must not drive action.
-- Make decisions explicit when they affect scope, risk, cost, or irreversibility.
-- Prefer asynchronous, low-friction control channels (GitHub Issues/PR comments) unless a repository mandates another.
-- Design autonomous workflows for high volume: queue requests, set concurrency limits, and auto-throttle to prevent overload.
+- Drive work from the desired outcome: choose the highest-quality safe path and execute end-to-end.
+- Correctness, safety, robustness, verifiability > speed unless requester explicitly approves the tradeoff.
+- End-to-end repo autonomy (issues, PRs, pushes, merges, releases, admin) within user-controlled repos; third-party repos require explicit request.
+- No backward compatibility unless requested; no legacy aliases or shims.
+- Proactively fix rule gaps, redundancy, or misplacement; regenerate AGENTS.md without waiting.
+- Self-evaluate continuously; fix rule/skill gaps immediately on discovery. In delegated mode, include improvement suggestions in the task result.
+- On user-reported failures: treat as systemic — fix, update rules, check for same pattern elsewhere, in one action.
+- Persistent workflow promises → propose rule update immediately (blocking gate). In delegated mode, follow that module's restricted-operations guidance.
+- Session memory resets; use rule files as persistent memory. Always reference current AGENTS.md, never from memory.
+- Rules are source of truth; update conflicting repos to comply or encode the exception.
+- When the `manager` skill is invoked, maintain that role for the session unless user explicitly stops it.
+- Investigate unclear items before proceeding; no assumptions without approval. Make scope/risk/cost/irreversibility decisions explicit.
+- Prefer async control channels (GitHub Issues/PR comments). Design high-volume workflows with queuing and throttling.
 
 ## GitHub notifications
 
-- After addressing a GitHub notification (CI failure fixed, PR reviewed, issue resolved), mark it as done using the GraphQL `markNotificationsAsDone` mutation.
-- Detailed notification management procedures (API commands, pagination) are in the `manager` skill.
+- After addressing a notification, mark as done via GraphQL `markNotificationsAsDone`. Detailed procedures in the `manager` skill.
 
 Source: github:metyatech/agent-rules@HEAD/rules/global/cli-standards.md
 
@@ -152,38 +118,28 @@ Source: github:metyatech/agent-rules@HEAD/rules/global/implementation-and-coding
 
 # Engineering and implementation standards
 
-- Prefer official/standard approaches recommended by the framework or tooling.
-- Prefer well-maintained external dependencies; build in-house only when no suitable option exists.
-- Prefer third-party tools/services over custom implementations when they can meet the requirements; prefer free options (OSS/free-tier) when feasible and call out limitations/tradeoffs.
-- PowerShell: `\` is a literal character (not an escape). Do not cargo-cult `\\` escaping patterns from other languages; validate APIs that require names like `Local\...` (e.g., named mutexes).
-- PowerShell: avoid assigning to or shadowing automatic/read-only variables (e.g., `$args`, `$PID`); use different names for locals.
-- PowerShell: when invoking PowerShell from PowerShell, avoid double-quoted `-Command` strings that allow the outer shell to expand `$...`; prefer `-File`, single quotes, or here-strings to control expansion.
-- If functionality appears reusable, assess reuse first and propose a shared module/repo; prefer remote dependencies (never local filesystem paths).
+- Prefer official/standard framework/tooling approaches.
+- Prefer well-maintained dependencies; build in-house only when no suitable option exists.
+- Prefer third-party tools/services over custom implementations; prefer OSS/free-tier when feasible and call out tradeoffs.
+- PowerShell: `\` is literal (not escape); avoid shadowing auto variables (`$args`, `$PID`); avoid double-quoted `-Command` strings (prefer `-File`, single quotes, or here-strings).
+- If functionality is reusable, assess reuse first and propose shared module/repo; prefer remote dependencies (never local paths).
 - Maintainability > testability > extensibility > readability.
-- Single responsibility; keep modules narrowly scoped and prefer composition over inheritance.
-- Keep dependency direction clean and swappable; avoid global mutable state.
-- Avoid deep nesting; use guard clauses and small functions.
-- Use clear, intention-revealing naming; avoid "Utils" dumping grounds.
-- Prefer configuration/constants over hardcoding; consolidate change points.
-- For GUI changes, prioritize ergonomics and discoverability so first-time users can complete core flows without external documents.
-- Every user-facing GUI component (inputs, actions, status indicators, lists, and dialog controls) must include an in-app explanation (for example tooltip, context help panel, or equivalent).
-- Do not rely on README-only guidance for GUI operation; critical usage guidance must be available inside the GUI itself.
-- For GUI styling, prefer frameworks and component libraries that provide a modern, polished appearance out of the box (e.g., Material Design, shadcn/ui, Fluent); avoid hand-crafting extensive custom styles when an established design system can achieve the same result with less effort.
-- When selecting a UI framework, prioritize built-in component quality and default aesthetics over raw flexibility; the goal is a standard, modern-looking UI with minimal custom styling code.
-- Keep everything DRY across code, specs, docs, tests, configs, and scripts; proactively refactor repeated procedures into shared configs/scripts with small, local overrides.
-- Persist durable runtime/domain data in a database with a fully normalized schema (3NF/BCNF target): store each fact once with keys/constraints, and compute derived statuses/views at read time instead of duplicating them.
-- Fix root causes; remove obsolete/unused code, branches, comments, and helpers. When a tool, dependency, or service under user control malfunctions, investigate and fix the source rather than building workarounds. User-owned repositories are fixable code, not external constraints.
-- Avoid leaving half-created state on failure paths. Any code that allocates/registers/starts resources must have a shared teardown that runs on all failure and cancellation paths.
-- Do not block inside async APIs or async-looking code paths; avoid synchronous I/O and synchronous process execution where responsiveness is expected.
-- Avoid external command execution (PATH-dependent tools, stringly-typed argument concatenation). Prefer native libraries/SDKs. If unavoidable: use absolute paths, safe argument handling, and strict input validation.
-- Prefer stable public APIs over internal/private APIs. If internal/private APIs are unavoidable, isolate them and document the reason and the expected break risk.
-- Externalize large embedded strings/templates/rules when possible.
-- Do not commit build artifacts (follow the repo's .gitignore).
-- Align file/folder names with their contents and keep naming conventions consistent.
-- Do not assume machine-specific environments (fixed workspace directories, drive letters, per-PC paths). Prefer repo-relative paths and explicit configuration so workflows work in arbitrary clone locations.
-- Temporary files/directories created by the agent MUST be placed only under the OS temp directory (e.g., `%TEMP%` / `$env:TEMP`). Do not create ad-hoc temp folders in repos/workspaces unless the requester explicitly approves.
-- When building tools, CLIs, or services intended for agent use, design for cross-agent compatibility. Do not rely on features specific to a single agent platform (Claude Code, Codex, Gemini CLI, Copilot). Use standard interfaces (CLI, HTTP, stdin/stdout, MCP) that any agent can invoke.
-- After modifying dependency manifests (package.json, pyproject.toml, Cargo.toml, etc.), regenerate lock files (run `npm install`, `pip freeze`, `cargo generate-lockfile`, etc.) and include the updated lock file in the same commit. Never commit a manifest change without the corresponding lock file update.
+- Single responsibility; composition over inheritance; clean dependency direction; no global mutable state.
+- Avoid deep nesting; guard clauses and small functions; clear intention-revealing names; no "Utils" dumping grounds.
+- Prefer config/constants over hardcoding; consolidate change points.
+- For GUI: prioritize ergonomics/discoverability, include in-app guidance for all components, prefer established design systems (Material, shadcn/ui, Fluent).
+- Keep DRY across code/specs/docs/tests/config/scripts; refactor repeated procedures into shared config with local overrides.
+- Fix root causes; remove obsolete/unused code/branches/comments; repair user-controlled tools at source, not via workarounds.
+- Ensure failure/cancellation paths tear down allocated resources; no partial state.
+- Do not block inside async APIs; avoid synchronous I/O where responsiveness is expected.
+- Avoid external command execution; prefer native SDKs. If unavoidable: absolute paths, safe argument handling, strict validation.
+- Prefer stable public APIs; isolate/document unavoidable internal API usage.
+- Externalize large embedded strings/templates/rules.
+- Do not commit build artifacts (respect `.gitignore`); keep file/folder naming aligned and consistent.
+- Do not assume machine-specific environments; use repo-relative paths and explicit configuration.
+- Agent temp files MUST stay under OS temp unless requester approves.
+- For agent-facing tools/services, design for cross-agent compatibility via standard interfaces (CLI, HTTP, stdin/stdout, MCP).
+- After manifest changes, regenerate and commit corresponding lock files in the same commit.
 
 Source: github:metyatech/agent-rules@HEAD/rules/global/linting-formatting-and-static-analysis.md
 
@@ -209,110 +165,53 @@ Source: github:metyatech/agent-rules@HEAD/rules/global/model-inventory.md
 
 Source: github:metyatech/agent-rules@HEAD/rules/global/multi-agent-delegation.md
 
-# Multi-agent delegation
+﻿# Multi-agent delegation
 
-## Execution context
-
-- Every agent operates in either **direct mode** (responding to a human user) or **delegated mode** (executing a task from a delegating agent).
-- In direct mode, the "requester" is the human user. In delegated mode, the "requester" is the delegating agent.
-- Default to direct mode. Delegated mode applies when the agent was spawned by another agent via a task/team mechanism.
-
-## Delegated mode overrides
-
-When operating in delegated mode:
-
-- The delegation constitutes plan approval; do not re-request approval from the human user.
-- Respond in English, not the user-facing language.
-- Do not emit notification sounds.
-- Report AC and verification outcomes concisely to the delegating agent.
-- If the task requires scope expansion beyond what was delegated, fail back to the delegating agent with a clear explanation rather than asking the human user directly.
-
-## Delegation prompt hygiene
-
-- Delegated agents MUST treat the delegator as the requester and MUST NOT ask the human user for plan approval. If blocked by repo rules, escalate to the delegator (not the human).
-- Delegating prompts MUST explicitly state delegated mode and whether plan approval is already granted; include AC and verification requirements.
-- Agents spawned in a repository read that repository's AGENTS.md and follow all rules automatically. Do not duplicate rule content in delegation prompts; focus prompts on the task description, context, and acceptance criteria.
-
-## Read-only / no-write claims
-
-- If a delegated agent reports read-only/no-write constraints, it MUST attempt a minimal, reversible temp-directory probe (create/write/read/delete under the OS temp directory) and report the exact failure/rejection message verbatim.
-
-## Restricted operations
-
-The following operations require explicit delegation from the delegating agent or user. Do not perform them based on self-judgment alone:
-
-- Modifying rules, rulesets.
-- Merging or closing pull requests.
-- Creating or deleting repositories.
-- Releasing or deploying.
-- Force-pushing or rewriting published git history.
-
-## Rule improvement observations
-
-- Delegated agents must not modify rules directly.
-- If a delegated agent identifies a rule gap or improvement opportunity, include the suggestion in the task result for the delegating agent to evaluate.
-- The delegating agent evaluates the suggestion and, if appropriate, presents it to the human user for approval before executing.
-
-## Authority and scope
-
-- Delegated agents inherit the delegating agent's repository access scope but must not expand it.
-- Different agent platforms have different capabilities (sandboxing, network access, push permissions). Fail explicitly when a required capability is unavailable in the current environment rather than attempting workarounds.
+- Every agent runs in direct mode (human requester) or delegated mode (spawned by another agent, where the delegator is the requester); default to direct mode.
+- In delegated mode, delegation is plan approval: do not re-request human approval, respond in English, emit no notification sounds, and report AC/verification concisely to the delegator. If scope must expand, fail back to the delegator with a clear explanation.
+- Delegation prompts MUST state delegated mode and approval state, include AC/verification requirements, and focus on task context (agents read repo AGENTS.md automatically).
+- If a delegated agent reports read-only/no-write constraints, it MUST run a minimal reversible OS-temp probe (create/write/read/delete) and report the exact failure verbatim.
+- Restricted operations require explicit delegation: modifying rules/rulesets, merging/closing PRs, creating/deleting repos, releasing/deploying, and force-pushing/rewriting published history.
+- Delegated agents must not modify rules directly; submit rule-gap suggestions in results for delegator review and human approval.
+- Delegated agents inherit delegator repository scope but must not expand it; if required capability is unavailable, fail explicitly.
 
 ## Cost optimization (model selection)
 
-- Always explicitly specify `model` and `effort` when spawning agents; never rely on defaults.
-- Minimize total cost (model pricing + reasoning tokens + context + retries).
-- Detailed cost optimization guidance is in the `manager` skill.
+- Always specify `model` and `effort` when spawning agents; never rely on defaults.
+- Minimize total cost (model pricing, reasoning tokens, context, retries).
+- Detailed optimization guidance is in the `manager` skill.
 
 ## Parallel execution safety
 
-- Do not run multiple agents that modify the same files or repository concurrently.
-- Independent tasks across different repositories may run in parallel.
-- If two tasks target the same repository, assess conflict risk: non-overlapping files may run in parallel; overlapping files must run sequentially.
-- When in doubt, run sequentially to avoid merge conflicts and inconsistent state.
+- Do not run concurrent agents that modify the same repository/files; different repositories may run in parallel.
+- When conflict risk is unclear, run sequentially.
 
 Source: github:metyatech/agent-rules@HEAD/rules/global/planning-and-approval-gate.md
 
 # Planning and approval gate
 
-## Approval waiver (trivial tasks)
-
-- In direct mode, you MAY proceed without asking for explicit approval when the user request is a trivial operational check and the action is low-risk and reversible.
-- Allowed under this waiver:
-  - Read-only inspection and verification (including running linters/tests/builds) that does not modify repo files.
-  - Spawning a sub-agent for a read-only smoke check (no repo writes; temp-only and cleaned up).
-  - Creating temporary files only under the OS temp directory (and deleting them during the task).
-- Not allowed under this waiver (approval is still required):
-  - Any manual edit of repository files, configuration files, or rule files.
-  - Installing/uninstalling dependencies or changing tool versions.
-  - Git operations beyond status/diff/log (commit/push/merge/release).
-  - Any external side effects (deployments, publishing, API writes, account/permission changes).
-- If there is any meaningful uncertainty about impact, request approval as usual.
-
-- Default to a two-phase workflow: clarify goal + plan first, execute after explicit requester approval.
-- In delegated mode (see Multi-agent delegation), the delegation itself constitutes plan approval. Do not re-request approval from the human user. If scope expansion is needed, fail back to the delegating agent.
-- If a request may require any state-changing work, you MUST first dialogue with the requester to clarify details and make the goal explicit. Do not proceed while the goal is ambiguous.
+- In direct mode, skip approval only for trivial, low-risk, reversible checks: read-only inspection/verification, spawning read-only smoke-check agents, and temp files under OS temp with cleanup.
+- Approval required for: file/rule/config edits, dependency/tool changes, git beyond status/diff/log, and external side effects (deploy/publish/API writes/account changes).
+- If impact is meaningfully uncertain, request approval.
+- Default flow: clarify goal + plan first, then execute after explicit requester approval.
+- In delegated mode, delegation itself is plan approval; if scope expansion is needed, fail back to the delegator.
+- For potentially state-changing work, clarify details first; do not proceed while ambiguous.
 - Allowed before approval: read-only inspection, dependency install, formatters/linters/typecheck/tests/builds (including auto-fix), and deterministic code generation/build steps.
-- Before any other state-changing execution: restate as AC, produce a plan, confirm with the requester, and wait for explicit "yes" before executing. Once approved, proceed without re-requesting; re-request only when changing or expanding the plan.
+- Before other state-changing execution: restate as AC, produce plan, confirm with requester, and wait for explicit post-plan "yes"; after approval, re-request only if plan/scope changes.
 - Do not treat the original task request as plan approval.
-- If state-changing execution starts without the required post-plan "yes", stop immediately, report the gate miss, add/update a prevention rule, regenerate AGENTS.md, and then restart from the approval gate.
-- No other exceptions: even if the user requests immediate execution (e.g., "skip planning", "just do it"), treat that as a request to move quickly through this gate, not to bypass it.
+- If state-changing work starts without required "yes", stop immediately, report the gate miss, update rules, regenerate AGENTS.md, and restart from the approval gate.
+- No bypass exceptions: "skip planning/just do it" means move quickly through the gate, not around it.
 
 ## Scope-based blanket approval
 
-- When the user gives a broad directive that clearly encompasses multiple steps (e.g., "fix everything", "do all of these"), treat it as approval for all work within that scope; do not re-request approval for individual sub-steps, batches, or obviously implied follow-up actions.
-- Obviously implied follow-up includes: rebuild linked packages, restart local services, update global installs, and other post-change deployment steps covered by existing rules.
-- Re-request approval only when expanding beyond the original scope or when an action carries risk not covered by the original directive.
+- Broad directives (e.g., "fix everything") count as approval for all work within scope including implied follow-up (rebuild, restart, update installs); re-request only for out-of-scope expansion.
 
 ## Reviewer proxy approval
 
-- When the autonomous-orchestrator skill is active, the skill invocation itself constitutes blanket approval for all operations within user-owned repositories. The orchestrator MUST approve plans via reviewer proxy without asking the human user.
-- The reviewer proxy evaluates plans against all rules, known error patterns, and quality standards before approving.
-- If the reviewer proxy approves (all checklist items pass), proceed without human approval.
-- If the reviewer proxy flags concerns, escalate to the human user.
-- The human user may override or interrupt at any time; user messages always take priority.
-- Reviewer proxy does NOT apply to restricted operations (creating/deleting repositories, force-pushing, rewriting published git history) — these always require human approval per Multi-agent delegation rules.
-- During autonomous operation, the orchestrator applies rule modifications directly when the reviewer proxy confirms they are safe and consistent with existing policies. Escalate to the human user only if the change conflicts with existing rules or carries ambiguous risk.
+- With `autonomous-orchestrator` active, invocation is blanket approval for user-owned repos; orchestrator approves plans via reviewer proxy without asking the human.
+- Reviewer proxy validates against rules, error patterns, and quality standards; proceed if approved, escalate to human if concerns remain. Human may override anytime.
+- Reviewer proxy never covers restricted operations (create/delete repos, force-push, rewrite history) — these require human approval.
+- Orchestrator may apply safe rule changes when reviewer proxy confirms policy consistency; escalate when ambiguous.
 
 Source: github:metyatech/agent-rules@HEAD/rules/global/post-change-deployment.md
 
@@ -342,43 +241,33 @@ Source: github:metyatech/agent-rules@HEAD/rules/global/quality-testing-and-error
 
 # Quality, testing, and error handling
 
-For AC definition, verification evidence, regression tests, and final reporting requirements, see Delivery hard gates.
+For AC definition, verification evidence, regression tests, and final reporting, see Delivery hard gates.
 
-## Quality priority
-
-- Quality (correctness, safety, robustness, verifiability) takes priority over speed or convenience.
+- Quality (correctness, safety, robustness, verifiability) takes priority over speed/convenience.
 
 ## Verification
 
-- If you are unsure what constitutes the full suite, run the repo's default verify/CI commands rather than guessing.
-- Enforce via CI: run the full suite on pull requests and on pushes to the default branch, and make it a required status check for merges; if no CI harness exists, add one using repo-standard commands.
-- Configure required status checks on the default branch when you have permission; otherwise report the limitation.
-- Do not rely on smoke-only gating or scheduled-only full runs for correctness; merges must require the full suite.
-- Ensure commit-time automation (pre-commit or repo-native) runs the full suite and blocks commits. This is a hard prerequisite: before making the first commit in a repository during a session, verify that pre-commit hooks are installed and functional; if not, install them before any other commits.
-- If pre-commit hooks cannot be installed (environment restriction, no supported tool), manually run the repo's full verify command before every commit and confirm it passes; do not proceed to `git commit` until verify succeeds.
-- Never disable checks, weaken assertions, loosen types, or add retries solely to make checks pass.
-- If the execution environment restricts test execution (no network, no database, sandboxed), run the available subset, document what was skipped, and ensure CI covers the remainder.
-- When delivering a user-facing tool or GUI, perform end-to-end manual verification (start the service, exercise each feature, confirm correct behavior) in addition to automated tests. Do not rely solely on unit tests for user-facing deliverables.
-- When manual testing reveals issues or unexpected behavior, convert those findings into automated tests before fixing; the test must fail before the fix and pass after.
-- The verify script must include a lock-file integrity check that catches manifest/lock-file drift locally, before CI. Verify that every dependency declared in the manifest has a corresponding entry in the lock file.
+- If full-suite scope is unclear, run repo-default verify/CI commands rather than guessing.
+- CI must run the full suite on PRs and default-branch pushes, require passing status checks for merges; if no CI exists, add one. Do not rely on smoke-only or scheduled-only gates.
+- Configure required default-branch checks when permitted; otherwise report the limitation.
+- Commit-time automation must run full verify and block commits; before first commit in a session, confirm hooks are installed (install if needed). If impossible, run full verify manually before every commit.
+- Never disable checks, weaken assertions/types, or add retries solely to make checks pass.
+- If environment limits execution (network/db/sandbox), run the available subset, document skipped coverage, ensure CI covers the remainder.
+- For user-facing tools/GUI, run end-to-end manual verification in addition to automated tests; when manual testing finds issues, add failing tests first, then fix.
+- Verify scripts must enforce lock-file integrity (manifest/lock drift detection).
 
 ## Tests
 
-- Follow test-first: add/update tests, observe failure, implement the fix, then observe pass.
-- Keep tests deterministic; minimize time/random/external I/O; inject when needed.
-- If a heuristic wait is unavoidable, it MUST be condition-based with a hard deadline and diagnostics, and requires explicit requester approval.
+- Test-first: add/update tests, observe failure, implement fix, observe pass.
+- Keep tests deterministic; minimize time/random/external I/O via injection.
+- Heuristic waits require condition-based logic, hard deadlines, diagnostics, and explicit requester approval.
 
-## Exceptions
+## Error handling
 
-- If required tests are impractical, document the coverage gap, provide a manual verification plan, and get explicit user approval before skipping.
-
-## Error handling and validation
-
-- Never swallow errors; fail fast or return early with explicit errors.
-- Error messages must reflect actual state and include relevant input context.
-- Validate config and external inputs at boundaries; fail with actionable guidance.
-- Log minimally but with diagnostic context; never log secrets or personal data.
-- Remove temporary debugging/instrumentation before the final patch.
+- Never swallow errors; fail fast with explicit errors reflecting actual state and input context.
+- Validate config/external inputs at boundaries with actionable failure guidance.
+- Log minimally with diagnostic context; never log secrets/personal data; remove debugging instrumentation before final patch.
+- If required tests are impractical, document the gap, provide manual verification plan, and get explicit approval.
 
 Source: github:metyatech/agent-rules@HEAD/rules/global/release-and-publication.md
 
