@@ -56,7 +56,59 @@ The only work you do directly:
 4. Dispatch all independent items in parallel
 5. Report to user: what was dispatched, what is pending. Return control immediately.
 6. On every subsequent user message, call `Status(wait=false)` first and report any state changes before addressing the user's new request.
-7. When all agents are done, summarize results and proceed to next steps.
+7. When all agents are done and review gates pass, summarize results and proceed to next steps.
+
+## Verification and Review Gates
+
+For any implementation delegated to sub-agents, enforce all gates below. Do not trust a completion claim without evidence.
+
+### Mandatory implementation-agent deliverable format
+
+Require the implementation agent to return all items:
+
+- Restated Acceptance Criteria (AC)
+- AC -> evidence mapping with exact commands/manual steps and outcomes (`PASS`/`FAIL`/`NOT RUN`)
+- Files changed list (exact paths)
+- Assumptions and uncertainties
+- Risks and rollback notes
+
+### Mandatory second-pass reviewer agent
+
+- Always run a separate reviewer sub-agent after implementation (never the same agent instance).
+- Reviewer output must include explicit `PASS` or `FAIL` and concrete reasons.
+- The manager must not adopt, summarize as done, or request lifecycle completion steps unless reviewer status is `PASS`.
+
+### Manager-side verification
+
+- When feasible, run repo-standard verification commands (for example verify/test/lint/build) in the manager environment.
+- Record exact commands and outcomes in manager updates/final report.
+- If automated checks cannot run, require explicit manual verification steps and state why automated checks are unavailable.
+
+### Spec-change protocol
+
+- If behavior/spec text changes, the implementation agent must cite where it changed (file + section heading) and summarize the behavior delta.
+- The reviewer must explicitly confirm spec alignment and list any ambiguous points requiring follow-up.
+
+### Prompt templates
+
+Use these short templates for delegation.
+
+Implementation-agent template:
+
+```text
+Delegated mode. Implement approved scope only.
+Return exactly: (1) Restated AC, (2) AC->evidence with exact commands/manual steps + PASS/FAIL/NOT RUN, (3) Files changed, (4) Assumptions/uncertainties, (5) Risks/rollback notes.
+If spec/behavior text changed: cite file + section and summarize behavior delta.
+Run applicable tests/verification and include exact commands and outputs summary.
+```
+
+Review-agent template:
+
+```text
+Delegated mode reviewer. Do not implement; review implementation output and diffs only.
+Return: explicit PASS or FAIL, reasons, AC coverage gaps, verification sufficiency, and spec alignment check (including ambiguous points).
+Reject if evidence format is incomplete or outcomes are unsupported.
+```
 
 ## Progress Reporting
 
