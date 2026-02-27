@@ -172,6 +172,7 @@ Source: github:metyatech/agent-rules@HEAD/rules/global/model-inventory.md
 - Before spawning sub-agents, run `ai-quota` to check availability.
 - Always explicitly specify `model` and `effort` from the model inventory when spawning agents; never rely on defaults.
 - The full model inventory with agent tables, routing principles, and quota fallback logic is maintained in the `manager` skill.
+- **Orchestrator model**: When spawning an orchestrator (manager/autonomous-orchestrator role), default to `claude-sonnet-4-6`; use Opus only when the task explicitly requires maximum reasoning depth. Sonnet has an independent quota pool and is ~3× faster, making it the preferred choice for coordination and delegation work.
 
 Source: github:metyatech/agent-rules@HEAD/rules/global/multi-agent-delegation.md
 

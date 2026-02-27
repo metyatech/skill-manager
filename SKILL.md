@@ -72,11 +72,14 @@ Require the implementation agent to return all items:
 - Assumptions and uncertainties
 - Risks and rollback notes
 
-### Mandatory second-pass reviewer agent
+### Second-pass reviewer agent
 
-- Always run a separate reviewer sub-agent after implementation (never the same agent instance).
+- After implementation, the manager MUST first run repo-standard verification commands (`npm run verify` or equivalent) to get objective evidence.
+- **If verification passes AND task is Standard tier**: reviewer is optional at manager's discretion. May proceed if AC evidence is clear and complete.
+- **If verification fails, cannot run, or task is Heavy tier / release / production change**: spawn a separate reviewer sub-agent (never the same agent instance). Use `claude-haiku-4-5-20251001` for Standard tier reviews; `claude-sonnet-4-6` for Heavy tier.
 - Reviewer output must include explicit `PASS` or `FAIL` and concrete reasons.
 - The manager must not adopt, summarize as done, or request lifecycle completion steps unless reviewer status is `PASS`.
+- **Critical**: reviewer receives the original AC/spec alongside the implementation output, NOT just the code. Agent-written tests may confirm implementation behavior rather than spec intent; the reviewer's job is to validate against the original requirements.
 
 ### Manager-side verification
 
@@ -105,9 +108,12 @@ Run applicable tests/verification and include exact commands and outputs summary
 Review-agent template:
 
 ```text
-Delegated mode reviewer. Do not implement; review implementation output and diffs only.
-Return: explicit PASS or FAIL, reasons, AC coverage gaps, verification sufficiency, and spec alignment check (including ambiguous points).
-Reject if evidence format is incomplete or outcomes are unsupported.
+Delegated mode reviewer. Do not implement; review only.
+Original requirements: [paste original AC/spec here]
+Implementation output: [paste implementation agent's report here]
+Note: tests were written by an agent and may confirm implementation behavior rather than spec intent.
+Return: explicit PASS or FAIL, reasons, spec alignment (does the implementation meet the original requirements, not just the tests?), AC coverage gaps, and any ambiguous points.
+Reject if evidence format is incomplete, outcomes are unsupported, or implementation deviates from original spec.
 ```
 
 ## Progress Reporting
