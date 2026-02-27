@@ -197,7 +197,7 @@ When spawning agents, minimize total cost (model pricing + reasoning tokens + co
 
 ## Model Inventory and Routing
 
-**Last reviewed: 2026-02-22.** Update this table when models change.
+**Last reviewed: 2026-02-27.** Update this table when models change.
 
 ### Tier definitions
 
@@ -206,6 +206,7 @@ When spawning agents, minimize total cost (model pricing + reasoning tokens + co
 - **Standard** — General implementation, code review, multi-file changes, most development work.
 - **Heavy** — Architecture decisions, safety-critical code, complex multi-step reasoning.
 - **Large Context** — Tasks requiring >200k token input.
+- **Bulk/Idle** — Automated compliance checks, repetitive transforms across repos. Prefer lowest-cost agents.
 
 Classify each task into a tier, then pick an agent with available quota and select the ★ preferred model for that tier. Fall back to other models in the same tier when the preferred model's agent has no quota.
 
@@ -244,6 +245,19 @@ Effort levels: `low` / `medium` / `high` / `xhigh` (gpt-5.1-codex-mini: `medium`
 
 Effort not supported. When `gemini-3-1-pro-preview` becomes available in Gemini CLI, promote it to Standard (SWE-bench 81%).
 
+### Aider (BYOK)
+
+Aider uses external API keys. Cost is per-token from the provider (no subscription). Best for bulk/idle tasks with cheap API models.
+
+| Tier | Model | Provider | Notes |
+| --- | --- | --- | --- |
+| Bulk/Idle | deepseek/deepseek-chat | DeepSeek | ★ $0.07-$0.27/MTok input; SWE-bench 73%; Aider 70% |
+| Bulk/Idle | deepseek/deepseek-reasoner | DeepSeek | $1.30/Aider task; Aider 74% |
+| Light | claude-3-5-haiku-20241022 | Anthropic | Same as Claude Haiku; uses Anthropic API key |
+| Standard | claude-sonnet-4-6-20261022 | Anthropic | Same as Claude Sonnet; uses Anthropic API key |
+
+Configure via `DEEPSEEK_API_KEY` or `ANTHROPIC_API_KEY` environment variables. Aider is not yet integrated into agent-runner (tracked task).
+
 ### Copilot
 
 Copilot charges different quota per model. Prefer lower-multiplier models when task complexity allows. Effort is not configurable (ignored).
@@ -277,25 +291,35 @@ Copilot charges different quota per model. Prefer lower-multiplier models when t
 - For trivial tasks, prefer Copilot free-tier models (0x quota) before consuming other agents' quota.
 - When multiple agents can handle a task equally well, prefer the one with the most remaining quota.
 
+#### Cost-efficiency priority
+
+- **Flat-rate (subscription) agents over pay-per-token agents** when quota is available. Subscription quota is sunk cost; unused quota is waste.
+- **Lowest-cost model that can succeed** for the tier. Do not use Heavy models for Light/Standard tasks.
+- **Idle/bulk tasks must not consume premium quota.** Route idle tasks to: Copilot 0x → Aider+DeepSeek → Amazon Q → Gemini Flash → other agents (in that order).
+- **Reserve premium quota for interactive use.** Usage gates enforce minimum 70% remaining for Claude and Codex 5-hour windows.
+- **Sonnet 4.6 is the workhorse.** Only 1.2% SWE-bench below Opus 4.6 at 1/4 the cost. Default to Sonnet; escalate to Opus only for Heavy tier.
+
 ### Quota fallback logic
 
 If the primary agent has no remaining quota:
 
-1. Query quota for all agents.
+1. Query quota for all agents via `ai-quota`.
 2. Select any agent with available quota that has a model at the required tier.
 3. For Copilot fallback, prefer lower-multiplier models to conserve quota.
-4. If the fallback model is significantly less capable, note the degradation in the dispatch report.
-5. If no agent has quota, queue the task and report the block immediately; do not drop silently.
+4. For Standard tier with no subscription quota: fall back to Aider + DeepSeek (pay-per-token, ~$1/task).
+5. If the fallback model is significantly less capable, note the degradation in the dispatch report.
+6. If no agent has quota and no pay-per-token fallback is available, queue the task and report the block immediately; do not drop silently.
 
 ### Routing decision sequence
 
-1. Classify the task tier (Free / Light / Standard / Heavy / Large Context).
+1. Classify the task tier (Free / Light / Standard / Heavy / Large Context / Bulk/Idle).
 2. For Free tier: dispatch to Copilot with a 0x model. Skip quota check.
-3. For other tiers: check quota for all agents via `ai-quota`.
-4. Pick the agent with available quota at the required tier; prefer the agent with the most remaining quota when multiple qualify.
-5. Set `agent_type`, `model`, and `effort` from the tables above (omit `effort` when column shows —).
-6. If primary choice has no quota: apply fallback logic.
-7. Include the chosen agent, model, tier, and effort in the dispatch report.
+3. For Bulk/Idle tier: dispatch to Copilot 0x → Aider+DeepSeek → Amazon Q → Gemini Flash (in that order). Skip premium agents.
+4. For other tiers: check quota for all agents via `ai-quota`.
+5. Pick the agent with available quota at the required tier; prefer the agent with the most remaining quota when multiple qualify.
+6. Set `agent_type`, `model`, and `effort` from the tables above (omit `effort` when column shows —).
+7. If primary choice has no quota: apply fallback logic.
+8. Include the chosen agent, model, tier, and effort in the dispatch report.
 
 ## GitHub Notifications
 
