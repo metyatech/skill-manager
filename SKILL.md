@@ -305,7 +305,7 @@ Copilot charges different quota per model. Prefer lower-multiplier models when t
 - **Lowest-cost model that can succeed** for the tier. Do not use Heavy models for Light/Standard tasks.
 - **Idle/bulk tasks must not consume premium quota.** Route idle tasks to: Copilot 0x → Aider+DeepSeek → Amazon Q → other agents (in that order). Do not route to Gemini agent type.
 - **Reserve premium quota for interactive use.** Usage gates enforce minimum 70% remaining for Claude and Codex 5-hour windows.
-- **Sonnet 4.6 is the workhorse.** Only 1.2% SWE-bench below Opus 4.6 at 1/4 the cost. Default to Sonnet; escalate to Opus for Heavy tier or when strict rule compliance failures occur (Opus has markedly higher instruction-following fidelity on complex AGENTS.md-style rule sets).
+- **Sonnet 4.6 is the workhorse.** Only 1.2% SWE-bench below Opus 4.6 at 1/4 the cost. Default to Sonnet; escalate to Opus for Heavy tier or when strict rule compliance failures occur (Opus IFEval 94% vs Sonnet 89.5%). Use `medium` effort for both — research shows higher effort degrades instruction-following on multi-constraint rule sets (arXiv:2505.11423).
 
 ### Quota fallback logic
 

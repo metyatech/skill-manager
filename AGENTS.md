@@ -177,7 +177,7 @@ Source: github:metyatech/agent-rules@HEAD/rules/global/model-inventory.md
 - Before spawning sub-agents, run `ai-quota` to check availability.
 - Always explicitly specify `model` and `effort` from the model inventory when spawning agents; never rely on defaults.
 - The full model inventory with agent tables, routing principles, and quota fallback logic is maintained in the `manager` skill.
-- **Orchestrator model**: When spawning an orchestrator (manager/autonomous-orchestrator role), default to `claude-sonnet-4-6` with `medium` effort; use `claude-opus-4-6` with `high` effort when strict rule compliance is required or the task requires maximum reasoning depth. Sonnet is ~3× faster and uses an independent quota pool; Opus is mandatory when rule adherence failures occur.
+- **Orchestrator model**: When spawning an orchestrator (manager/autonomous-orchestrator role), default to `claude-sonnet-4-6` with `medium` effort; use `claude-opus-4-6` with `medium` effort when strict rule compliance is required. Research shows higher effort degrades instruction-following on multi-constraint rule sets (arXiv:2505.11423). Use `high`/`max` effort only for complex reasoning tasks, not for rule compliance.
 - **Gemini sub-agent reliability**: Do NOT use Gemini (`gemini` agent type) for sub-agent delegation. Even single Gemini agents hit 429 "No capacity available" server errors frequently, making them unreliable for unattended tasks. Use Claude or Copilot instead. Gemini CLI may be used interactively by the user but not as a spawned sub-agent.
 
 Source: github:metyatech/agent-rules@HEAD/rules/global/multi-agent-delegation.md
@@ -211,7 +211,7 @@ Source: github:metyatech/agent-rules@HEAD/rules/global/multi-agent-delegation.md
 ## agents-mcp dispatch
 
 - Always set `mode: 'edit'` when spawning implementation agents; default `mode: 'plan'` is read-only and wastes the agent call.
-- `agents-mcp wait` is unreliable (may return before agent completes); use `Status(wait=true, timeout=8)` as the definitive completion check.
+- `agents-mcp wait` is unreliable (may return before agent completes); use `Status(wait=true, timeout=8min)` (a timeout of 8 minutes) as the definitive completion check.
 
 Source: github:metyatech/agent-rules@HEAD/rules/global/planning-and-approval-gate.md
 
