@@ -305,7 +305,7 @@ Copilot charges different quota per model. Prefer lower-multiplier models when t
 - **Lowest-cost model that can succeed** for the tier. Do not use Heavy models for Light/Standard tasks.
 - **Idle/bulk tasks must not consume premium quota.** Route idle tasks to: Copilot 0x → Aider+DeepSeek → Amazon Q → other agents (in that order). Do not route to Gemini agent type.
 - **Reserve premium quota for interactive use.** Usage gates enforce minimum 70% remaining for Claude and Codex 5-hour windows.
-- **Sonnet 4.6 is the workhorse.** Only 1.2% SWE-bench below Opus 4.6 at 1/4 the cost. Default to Sonnet; escalate to Opus only for Heavy tier.
+- **Sonnet 4.6 is the workhorse.** Only 1.2% SWE-bench below Opus 4.6 at 1/4 the cost. Default to Sonnet; escalate to Opus for Heavy tier or when strict rule compliance failures occur (Opus has markedly higher instruction-following fidelity on complex AGENTS.md-style rule sets).
 
 ### Quota fallback logic
 
@@ -328,6 +328,17 @@ If the primary agent has no remaining quota:
 6. Set `agent_type`, `model`, and `effort` from the tables above (omit `effort` when column shows —).
 7. If primary choice has no quota: apply fallback logic.
 8. Include the chosen agent, model, tier, and effort in the dispatch report.
+
+### Notable models (not in current routing)
+
+These models are not yet accessible via supported agent CLIs but are worth monitoring for future routing additions:
+
+| Model | Provider | Strength | Access |
+| --- | --- | --- | --- |
+| Kimi K2.5 | Moonshot AI | IFEval SOTA 94.0; Agent Swarm 100 sub-agents; 4.5× parallel speedup | API only; no CLI |
+| Grok 4.20 | xAI | 4-agent council architecture; ForecastBench #2; 2M context | xAI API only |
+| Qwen 3.5 | Alibaba | IFEval 92.6 (world #2); structured output | API only |
+| GLM-4.7 | Zhipu AI | Dual-judge highest score (9.0/10); rule adherence | API only |
 
 ## GitHub Notifications
 
