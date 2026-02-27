@@ -165,7 +165,7 @@ gemini mcp add Swarm -- npx -y --package git+https://github.com/metyatech/agents
 Use the `Spawn` tool exposed by the MCP server:
 
 - `prompt`: the full self-contained task description
-- `agent_type`: target agent (`claude`, `codex`, `gemini`, etc.)
+- `agent_type`: target agent (`claude`, `codex`, `copilot`). **Do NOT use `gemini`** — Gemini CLI agents hit 429 "No capacity available" errors even for single agents and are unreliable for unattended delegation.
 - `model`: explicit model string — **always set this from the Model Inventory** (e.g. `"claude-sonnet-4-6"`, `"gpt-5.3-codex"`).
 - `effort`: optional reasoning effort string passed to the agent CLI. For Claude: `--effort <value>` (`low`/`medium`/`high`). For Codex: `-c model_reasoning_effort="<value>"` (`low`/`medium`/`high`/`xhigh`; gpt-5.1-codex-mini: `medium`/`high` only). Gemini and Copilot ignore it. Set from the Model Inventory; omit when not needed.
 
@@ -243,6 +243,8 @@ Effort levels: `low` / `medium` / `high` / `xhigh` (gpt-5.1-codex-mini: `medium`
 
 ### Gemini
 
+> **⚠ Sub-agent reliability**: The `gemini` agent type is **NOT recommended for sub-agent delegation**. Gemini CLI agents hit 429 "No capacity available" server errors frequently, even for single unattended tasks, making them unreliable. Gemini CLI may be used interactively. For large-context work, use **Copilot with gemini-3-pro model** (see Copilot table) instead.
+
 | Tier | Model | Effort | Notes |
 | --- | --- | --- | --- |
 | Light | gemini-3-flash-preview | — | SWE-bench 78%; strong despite Light tier |
@@ -290,10 +292,10 @@ Copilot charges different quota per model. Prefer lower-multiplier models when t
 
 ### Routing principles
 
-- All agents (claude, codex, gemini, copilot) operate on independent flat-rate subscriptions with periodic quota limits. Route by model quality, quota conservation, and quota distribution.
+- Active sub-agent types are `claude`, `codex`, `copilot`. Do NOT spawn `gemini` agents (unreliable; see Gemini section). All active agent types operate on independent flat-rate subscriptions with periodic quota limits. Route by model quality, quota conservation, and quota distribution.
 - All agents can execute code, modify files, and perform multi-step tasks. Route by model quality and quota, not by execution capability.
 - Spread work across agents to maximize total throughput.
-- For large-context tasks (>200k tokens), prefer Gemini (1M token context).
+- For large-context tasks (>200k tokens), prefer Copilot with `gemini-3-pro` model (1M token context); do NOT use the `gemini` agent type.
 - For trivial tasks, prefer Copilot free-tier models (0x quota) before consuming other agents' quota.
 - When multiple agents can handle a task equally well, prefer the one with the most remaining quota.
 
@@ -301,7 +303,7 @@ Copilot charges different quota per model. Prefer lower-multiplier models when t
 
 - **Flat-rate (subscription) agents over pay-per-token agents** when quota is available. Subscription quota is sunk cost; unused quota is waste.
 - **Lowest-cost model that can succeed** for the tier. Do not use Heavy models for Light/Standard tasks.
-- **Idle/bulk tasks must not consume premium quota.** Route idle tasks to: Copilot 0x → Aider+DeepSeek → Amazon Q → Gemini Flash → other agents (in that order).
+- **Idle/bulk tasks must not consume premium quota.** Route idle tasks to: Copilot 0x → Aider+DeepSeek → Amazon Q → other agents (in that order). Do not route to Gemini agent type.
 - **Reserve premium quota for interactive use.** Usage gates enforce minimum 70% remaining for Claude and Codex 5-hour windows.
 - **Sonnet 4.6 is the workhorse.** Only 1.2% SWE-bench below Opus 4.6 at 1/4 the cost. Default to Sonnet; escalate to Opus only for Heavy tier.
 
@@ -320,7 +322,7 @@ If the primary agent has no remaining quota:
 
 1. Classify the task tier (Free / Light / Standard / Heavy / Large Context / Bulk/Idle).
 2. For Free tier: dispatch to Copilot with a 0x model. Skip quota check.
-3. For Bulk/Idle tier: dispatch to Copilot 0x → Aider+DeepSeek → Amazon Q → Gemini Flash (in that order). Skip premium agents.
+3. For Bulk/Idle tier: dispatch to Copilot 0x → Aider+DeepSeek → Amazon Q (in that order). Skip premium agents and do not use Gemini agent type.
 4. For other tiers: check quota for all agents via `ai-quota`.
 5. Pick the agent with available quota at the required tier; prefer the agent with the most remaining quota when multiple qualify.
 6. Set `agent_type`, `model`, and `effort` from the tables above (omit `effort` when column shows —).
