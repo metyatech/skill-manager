@@ -53,12 +53,6 @@ Source: github:metyatech/agent-rules@HEAD/rules/global/autonomous-operations.md
 - Rules are source of truth; update conflicting repos to comply or encode the exception.
 - Investigate unclear items before proceeding; no assumptions without approval. Make scope/risk/cost/irreversibility decisions explicit.
 
-Source: github:metyatech/agent-rules@HEAD/rules/global/cli-standards.md
-
-# CLI standards
-
-- When building a CLI, follow standard conventions: --help/-h, --version/-V, stdin/stdout piping, --json output, --dry-run for mutations, deterministic exit codes, and JSON Schema config validation.
-
 Source: github:metyatech/agent-rules@HEAD/rules/global/command-execution.md
 
 # Workflow and command execution
@@ -77,21 +71,17 @@ Source: github:metyatech/agent-rules@HEAD/rules/global/command-execution.md
 - Keep changes scoped to affected repositories; when shared modules change, update consumers and verify at least one.
 - If no branch is specified, work on the current branch; direct commits to main/master are allowed.
 - Do not assume agent platform capabilities beyond what is available; fail explicitly when unavailable.
+- When building a CLI, follow standard conventions: --help/-h, --version/-V, stdin/stdout piping, --json output, --dry-run for mutations, deterministic exit codes, and JSON Schema config validation.
 
-Source: github:metyatech/agent-rules@HEAD/rules/global/delivery-hard-gates.md
+## Post-change deployment
 
-# Delivery hard gates
+After modifying code, check whether deployment steps beyond commit/push are needed before concluding.
 
-Non-negotiable gates for any state-changing work or any claim of "done", "fixed", "working", or "passing".
+- If the repo is globally linked (`npm ls -g` shows `->` to local path), rebuild and verify the global binary is functional.
+- If the repo powers a running service, daemon, or scheduled task, rebuild, restart, and verify with deterministic evidence.
+- Do not claim completion until the running instance reflects the changes.
 
-1. **BEFORE** state-changing work: list AC as binary, testable statements (aim 1-3 items). Ask blocking questions if ambiguous.
-2. **BEFORE** each `git commit`: repo's full verification suite must pass in the current working tree.
-3. **WITH** each AC: define verification evidence (automated test preferred; deterministic manual procedure otherwise).
-4. **FOR** code/runtime changes: automated tests required (requester may explicitly approve skipping). Bugfixes MUST include a regression test.
-5. **ALWAYS**: run repo-standard `verify` command; if missing, add it. Enforce via commit-time hooks and CI.
-6. **IN** final response: AC→evidence mapping with outcomes (PASS/FAIL/NOT RUN/N/A) and exact verification commands executed.
-
-Detailed evidence format, partial-verification procedures, and response templates are in the `quality-workflow` skill.
+Detection and verification procedures are in the `post-deploy` skill.
 
 Source: github:metyatech/agent-rules@HEAD/rules/global/implementation-and-coding-standards.md
 
@@ -176,23 +166,20 @@ Source: github:metyatech/agent-rules@HEAD/rules/global/planning-and-approval-gat
 
 Reviewer proxy approval procedures are in the `autonomous-orchestrator` skill.
 
-Source: github:metyatech/agent-rules@HEAD/rules/global/post-change-deployment.md
+Source: github:metyatech/agent-rules@HEAD/rules/global/quality-and-delivery.md
 
-# Post-change deployment
+# Quality and delivery gates
 
-After modifying code, check whether deployment steps beyond commit/push are needed before concluding.
+Non-negotiable gates for any state-changing work or any claim of "done", "fixed", "working", or "passing".
 
-- If the repo is globally linked (`npm ls -g` shows `->` to local path), rebuild and verify the global binary is functional.
-- If the repo powers a running service, daemon, or scheduled task, rebuild, restart, and verify with deterministic evidence.
-- Do not claim completion until the running instance reflects the changes.
+1. **BEFORE** state-changing work: list AC as binary, testable statements (aim 1-3 items). Ask blocking questions if ambiguous.
+2. **BEFORE** each `git commit`: repo's full verification suite must pass in the current working tree.
+3. **WITH** each AC: define verification evidence (automated test preferred; deterministic manual procedure otherwise).
+4. **FOR** code/runtime changes: automated tests required (requester may explicitly approve skipping). Bugfixes MUST include a regression test.
+5. **ALWAYS**: run repo-standard `verify` command; if missing, add it. Enforce via commit-time hooks and CI.
+6. **IN** final response: AC→evidence mapping with outcomes (PASS/FAIL/NOT RUN/N/A) and exact verification commands executed.
 
-Detection and verification procedures are in the `post-deploy` skill.
-
-Source: github:metyatech/agent-rules@HEAD/rules/global/quality-testing-and-errors.md
-
-# Quality, testing, and error handling
-
-For AC definition, verification evidence, regression tests, and final reporting, see Delivery hard gates.
+## Quality principles
 
 - Quality (correctness, safety, robustness, verifiability) > speed/convenience.
 - If full-suite scope is unclear, run repo-default verify/CI commands rather than guessing.
@@ -203,7 +190,7 @@ For AC definition, verification evidence, regression tests, and final reporting,
 - Never swallow errors; fail fast with explicit errors reflecting actual state and input context.
 - Validate config/external inputs at boundaries with actionable failure guidance.
 
-Detailed CI setup, environment constraints, test practices, and error handling procedures are in the `quality-workflow` skill.
+Detailed evidence format, CI setup, test practices, and error handling procedures are in the `quality-workflow` skill.
 
 Source: github:metyatech/agent-rules@HEAD/rules/global/release-and-publication.md
 
@@ -279,7 +266,6 @@ Source: github:metyatech/agent-rules@HEAD/rules/global/writing-and-documentation
 - After completing a response, emit the Windows SystemSounds.Asterisk sound via PowerShell only when operating in direct mode (top-level agent).
 - If operating in delegated mode (spawned by another agent / sub-agent), do not emit notification sounds.
 - If operating as a manager/orchestrator, do not ask delegated sub-agents to emit sounds; emit at most once when the overall task is complete (direct mode only).
-
 - When delivering a new tool, feature, or artifact to the user, explain what it is, how to use it (with example commands), and what its key capabilities are. Do not report only completion status; always include a usage guide in the same response.
 
 ## Developer-facing writing

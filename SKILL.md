@@ -358,11 +358,9 @@ These models are not yet accessible via supported agent CLIs but are worth monit
 
 After addressing a GitHub notification (CI failure fixed, PR reviewed, issue resolved), mark it as done so the user's inbox stays clean.
 
-- To mark notifications as done, use the GraphQL `markNotificationsAsDone` mutation. The REST API `PATCH /notifications/threads/{id}` only marks as read, not done.
-  - Get notification IDs: `gh api graphql -f query='{ viewer { notificationThreads(first: 50, query: "is:read") { nodes { id } } } }' --jq '[.data.viewer.notificationThreads.nodes[].id]'`
-  - Mark as done: `gh api graphql -f query="mutation { markNotificationsAsDone(input: {ids: $ids}) { success } }"`
-  - Paginate with `first`/`after` if more than 50 notifications exist.
-- If the gh token lacks the required scope, request the user to add it before proceeding.
+- Use `DELETE /notifications/threads/{id}` (HTTP 204) to mark notifications as **done** (removes from inbox / moves to Done tab).
+- Do NOT use `PATCH /notifications/threads/{id}` (marks as read but leaves in inbox).
+- After processing notifications, bulk-delete any remaining read-but-not-done notifications with the same DELETE API.
 
 ## Thread Inbox Procedures
 
