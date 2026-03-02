@@ -147,36 +147,25 @@ Subagents are launched via **agents-mcp** (metyatech's standalone repo) — an M
 
 - **Mandatory**: always use agents-mcp for dispatching sub-agents. Do not use platform-built-in subagent spawners, which run agents at the orchestrator's own model tier and bypass cost-optimized routing from the capability table.
 
-**One-time setup per platform (run once by the user):**
-
-```bash
-# Claude Code
-claude mcp add --scope user Swarm -- npx -y --package git+https://github.com/metyatech/agents-mcp.git#main agents-mcp
-
-# Codex
-codex mcp add swarm -- npx -y --package git+https://github.com/metyatech/agents-mcp.git#main agents-mcp
-
-# Gemini CLI
-gemini mcp add Swarm -- npx -y --package git+https://github.com/metyatech/agents-mcp.git#main agents-mcp
-```
+**One-time setup:** see README.md for platform-specific installation commands.
 
 **Dispatching a task:**
 
-Use the `Spawn` tool exposed by the MCP server:
+Use agents-mcp to spawn sub-agents with:
 
 - `prompt`: the full self-contained task description
-- `agent_type`: target agent (`claude`, `codex`, `copilot`). **Do NOT use `gemini`** — Gemini CLI agents hit 429 "No capacity available" errors even for single agents and are unreliable for unattended delegation.
-- `model`: explicit model string — **always set this from the Model Inventory** (e.g. `"claude-sonnet-4-6"`, `"gpt-5.3-codex"`).
-- `effort`: optional reasoning effort string passed to the agent CLI. For Claude: `--effort <value>` (`low`/`medium`/`high`). For Codex: `-c model_reasoning_effort="<value>"` (`low`/`medium`/`high`/`xhigh`; gpt-5.1-codex-mini: `medium`/`high` only). Gemini and Copilot ignore it. Set from the Model Inventory; omit when not needed.
+- `agent_type`: target agent (`claude`, `codex`, `copilot`). **Do NOT use `gemini`** — unreliable for unattended delegation (429 errors).
+- `model`: explicit model string from the Model Inventory (e.g. `"claude-sonnet-4-6"`).
+- `effort`: optional reasoning effort. Set from the Model Inventory; omit when not needed.
 
 **Monitoring:**
 
 After spawning agents, return to the user immediately — never block waiting for completion.
 
-- **Every response**: before answering the user, call `Status(wait=false)` for all active tasks and report any completions or failures.
-- **Background wait (Claude Code only)**: additionally run `Bash(run_in_background=true, command="agents-mcp wait --task <name>")` so you are notified when agents finish.
-- **Never use `Status(wait=true)`** — it blocks the conversation and prevents the user from sending new instructions.
-- Use `Stop` to cancel agents. Use `Tasks` to list all active tasks.
+- Before every response, check status for all active tasks and report completions or failures.
+- Use background/non-blocking monitoring to be notified when agents finish.
+- Never block the conversation waiting for agent completion.
+- Cancel agents or list active tasks as needed.
 
 **If agents-mcp is not configured:**
 
@@ -349,10 +338,7 @@ These models are not yet accessible via supported agent CLIs but are worth monit
 
 ## Platform-specific workarounds
 
-### Codex: Commands blocked by policy (PowerShell)
-
-- Blocked by policy under Codex: `Remove-Item` (aliases: `rm`, `ri`, `del`, `erase`) -> Use: `if ([IO.File]::Exists($p)) { [IO.File]::SetAttributes($p,[IO.FileAttributes]::Normal); [IO.File]::Delete($p) }`
-- Blocked by policy under Codex: `Remove-Item -Recurse` (aliases: `rmdir`, `rd`) -> Use: `if ([IO.Directory]::Exists($d)) { [IO.File]::SetAttributes($d,[IO.FileAttributes]::Normal); foreach ($e in [IO.Directory]::EnumerateFileSystemEntries($d,'*',[IO.SearchOption]::AllDirectories)) { [IO.File]::SetAttributes($e,[IO.FileAttributes]::Normal) }; [IO.Directory]::Delete($d,$true) }`
+- On platforms with policy-blocked file deletion commands (e.g., Codex on Windows), use direct .NET file system APIs as workarounds. See README.md for specific replacement patterns.
 
 ## GitHub Notifications
 
