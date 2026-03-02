@@ -338,7 +338,7 @@ These models are not yet accessible via supported agent CLIs but are worth monit
 
 ## Platform-specific workarounds
 
-- On platforms with policy-blocked file deletion commands (e.g., Codex on Windows), use direct .NET file system APIs as workarounds. See README.md for specific replacement patterns.
+- On platforms with policy-blocked file deletion commands (e.g., Codex on Windows), see the Codex-specific workarounds in the command-execution rules.
 
 ## GitHub Notifications
 
