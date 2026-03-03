@@ -32,6 +32,13 @@ Invoke the skill using your platform's slash command syntax:
 
 Use a **mid-tier model** with **medium reasoning effort** for the manager itself. The manager's job is orchestration and decomposition — it does not need maximum capability. Heavy analytical and implementation work is delegated to sub-agents, where you can apply appropriate model selection per task.
 
+## Community and Maintenance
+
+- [Security Policy](SECURITY.md)
+- [Contributing Guidelines](CONTRIBUTING.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+- [Changelog](CHANGELOG.md)
+
 ## License
 
 MIT
