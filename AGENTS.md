@@ -48,21 +48,24 @@ Source: github:metyatech/agent-rules@HEAD/rules/global/autonomous-operations.md
 - No backward compatibility unless requested; no legacy aliases, shims, or temporary fallback behavior.
 - Proactively fix rule gaps, redundancy, or misplacement; regenerate AGENTS.md without waiting.
 - Self-evaluate continuously; fix rule/skill gaps immediately on discovery. In delegated mode, include improvement suggestions in the task result.
-- On user-reported failures: treat as systemic — fix, update rules, check for same pattern elsewhere, in one action.
+- On user-reported failures: treat as systemic - fix, update rules, check for same pattern elsewhere, in one action.
 - Session memory resets; use rule files as persistent memory. Never write to platform-specific local memory files; all persistent behavioral knowledge MUST live in agent rules.
 - Rules are source of truth; update conflicting repos to comply or encode the exception.
 - Investigate unclear items before proceeding; no assumptions without approval. Make scope/risk/cost/irreversibility decisions explicit.
 
+## Autonomous task resolution
+
+- If a verification step (e.g., `npm run verify`, `npm audit`) fails due to known security vulnerabilities, attempt to fix them automatically (e.g., `npm audit fix`). If the fix is successful and verification passes, commit and push the changes to the PR branch.
+- If a task is stuck or constantly failing due to quota limits (429 errors), ensure the task state is correctly updated in `task-tracker` so it can resume from the last successful stage in the next execution cycle.
+- Do not remain idle on a failing PR if a known automated fix exists.
+
 Source: github:metyatech/agent-rules@HEAD/rules/global/command-execution.md
 
 # Workflow and command execution
-
 ## MCP server setup verification
-
 - After adding or modifying an MCP server configuration, immediately verify connectivity using the platform's MCP health check and confirm the server is connected.
 - If a configured MCP server fails to connect, diagnose and fix before proceeding. Do not silently fall back to alternative tools without reporting the degradation.
 - At session start, if expected MCP tools are absent from the available tool set, verify MCP server health and report/fix connection failures before continuing.
-
 - Do not add wrappers or pipes to commands unless the user explicitly asks.
 - Prefer repository-standard scripts/commands (package.json scripts, README instructions).
 - Reproduce reported command issues by running the same command (or closest equivalent) before proposing fixes.
@@ -72,21 +75,16 @@ Source: github:metyatech/agent-rules@HEAD/rules/global/command-execution.md
 - If no branch is specified, work on the current branch; direct commits to main/master are allowed.
 - Do not assume agent platform capabilities beyond what is available; fail explicitly when unavailable.
 - When building a CLI, follow standard conventions: --help/-h, --version/-V, stdin/stdout piping, --json output, --dry-run for mutations, deterministic exit codes, and JSON Schema config validation.
-
-## Codex-only: Commands blocked by policy (PowerShell)
-
+## Codex-only PowerShell safety
 - `Remove-Item` (aliases: `rm`, `ri`, `del`, `erase`) → Use: `if ([IO.File]::Exists($p)) { [IO.File]::SetAttributes($p,[IO.FileAttributes]::Normal); [IO.File]::Delete($p) }`
 - `Remove-Item -Recurse` (aliases: `rmdir`, `rd`) → Use: `if ([IO.Directory]::Exists($d)) { [IO.File]::SetAttributes($d,[IO.FileAttributes]::Normal); foreach ($e in [IO.Directory]::EnumerateFileSystemEntries($d,'*',[IO.SearchOption]::AllDirectories)) { [IO.File]::SetAttributes($e,[IO.FileAttributes]::Normal) }; [IO.Directory]::Delete($d,$true) }`
-
+- In PowerShell, use `;` for sequential command chaining; never use `&&` or `||` as control-flow operators.
 ## Post-change deployment
-
-After modifying code, check whether deployment steps beyond commit/push are needed before concluding.
-
+- After modifying code, check whether deployment steps beyond commit/push are needed before concluding.
 - If the repo is globally linked (`npm ls -g` shows `->` to local path), rebuild and verify the global binary is functional.
 - If the repo powers a running service, daemon, or scheduled task, rebuild, restart, and verify with deterministic evidence.
 - Do not claim completion until the running instance reflects the changes.
-
-Detection and verification procedures are in the `post-deploy` skill.
+- Detection and verification procedures are in the `post-deploy` skill.
 
 Source: github:metyatech/agent-rules@HEAD/rules/global/implementation-and-coding-standards.md
 
@@ -168,6 +166,7 @@ Source: github:metyatech/agent-rules@HEAD/rules/global/planning-and-approval-gat
 - If state-changing work starts without required "yes", stop immediately, report the gate miss, and restart from the approval gate.
 - No bypass exceptions: "skip planning/just do it" means move quickly through the gate, not around it.
 - **Blanket approval**: broad directives (e.g., "fix everything") cover all in-scope follow-up; re-request only for out-of-scope expansion.
+- For user-owned publishable packages, explicit requests such as "commit & push" or "complete this fix" include approval for the release/publish chain when release is the normal completion path, unless the user explicitly limits scope.
 
 Reviewer proxy approval procedures are in the `autonomous-orchestrator` skill.
 
@@ -209,6 +208,7 @@ Source: github:metyatech/agent-rules@HEAD/rules/global/release-and-publication.m
 - Verify published packages resolve and run correctly before reporting done.
 - For public repos, set GitHub Description, Topics, and Homepage. Assign topics from the standard set defined in the `release-publish` skill.
 - Before reporting a publishable-package change as complete, verify the full delivery chain (commit → push → version bump → release → publish → install verify). Procedures in the `release-publish` skill.
+- For user-owned publishable packages, when the user asks to commit/push or finalize a fix, treat release/publish as in-scope follow-up by default and execute the full delivery chain unless the user explicitly opts out.
 
 Source: github:metyatech/agent-rules@HEAD/rules/global/skill-authoring.md
 

@@ -16,15 +16,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+          cache: "npm"
 
       - name: Install dependencies
-        run: npm install -g markdownlint-cli compose-agentsmd
+        run: npm ci
 
-      - name: Run markdownlint
-        run: markdownlint **/*.md --ignore node_modules --ignore AGENTS.md
-
-      - name: Verify AGENTS.md is up to date
-        run: |
-          compose-agentsmd --compose
-          git diff --exit-code AGENTS.md
-
+      - name: Run verification
+        run: npm run verify

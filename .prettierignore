@@ -1,0 +1,6 @@
+node_modules/
+AGENTS.md
+CLAUDE.md
+.githooks/
+.tasks.jsonl
+skills-lock.json
