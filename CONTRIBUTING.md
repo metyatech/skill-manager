@@ -8,7 +8,7 @@ Thank you for your interest in contributing to `skill-manager`.
 git clone https://github.com/metyatech/skill-manager.git
 cd skill-manager
 npm install
-npm run verify   # lint + test + build
+npm run verify   # lint + format + agents.md verification
 ```
 
 ## Submitting changes
@@ -20,4 +20,5 @@ npm run verify   # lint + test + build
 
 ## Scope
 
-This skill covers **task orchestration and agent delegation**. Please keep PRs scoped to manager/orchestrator concerns.
+This skill covers **task orchestration and agent delegation**. Please keep PRs scoped to
+manager/orchestrator concerns.

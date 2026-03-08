@@ -1,12 +1,15 @@
 #!/bin/sh
 
-# Run verification (markdownlint for markdown-only repos)
-if command -v markdownlint > /dev/null 2>&1; then
-  markdownlint **/*.md --ignore node_modules --ignore AGENTS.md || exit 1
-fi
-
-# Update AGENTS.md (non-blocking)
-if command -v compose-agentsmd > /dev/null 2>&1; then
-  compose-agentsmd --compose || true
-  git add AGENTS.md || true
+# Run verification (lint + format + agents.md)
+if [ -f package.json ]; then
+  # We use --ignore-scripts or similar if we don't want to run verify during pre-commit?
+  # No, the rule says run the full verification suite.
+  # But we want to auto-update AGENTS.md after verify.
+  npm run verify
+  
+  # Auto-update AGENTS.md and add to commit
+  if command -v compose-agentsmd > /dev/null 2>&1; then
+    compose-agentsmd --compose || true
+    git add AGENTS.md || true
+  fi
 fi

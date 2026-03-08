@@ -1,6 +1,8 @@
 # skill-manager
 
-A platform-agnostic agent skill that turns your AI coding assistant into a task orchestrator. Instead of doing work itself, the manager decomposes requests, dispatches background agents in parallel, and coordinates their results.
+A platform-agnostic agent skill that turns your AI coding assistant into a task orchestrator.
+Instead of doing work itself, the manager decomposes requests, dispatches background agents in
+parallel, and coordinates their results.
 
 ## Installation
 
@@ -12,15 +14,16 @@ npx skills add metyatech/skill-manager
 
 Invoke the skill using your platform's slash command syntax:
 
-| Platform | Command |
-| --- | --- |
-| Claude Code | `/manager` |
-| Codex | `$manager` |
+| Platform        | Command                                     |
+| --------------- | ------------------------------------------- |
+| Claude Code     | `/manager`                                  |
+| Codex           | `$manager`                                  |
 | Other platforms | See your platform's skill invocation syntax |
 
 ## agents-mcp Setup (One-Time Per Platform)
 
-The manager dispatches sub-agents via [agents-mcp](https://github.com/metyatech/agents-mcp). Install the MCP server once per platform:
+The manager dispatches sub-agents via [agents-mcp](https://github.com/metyatech/agents-mcp). Install
+the MCP server once per platform:
 
 ```bash
 # Claude Code
@@ -35,16 +38,20 @@ gemini mcp add Swarm -- npx -y --package git+https://github.com/metyatech/agents
 
 ### Platform-specific monitoring
 
-- **Claude Code**: Use `Bash(run_in_background=true, command="agents-mcp wait --task <name>")` for background monitoring, and `Status(wait=false)` for non-blocking checks.
-- **Codex**: Use `Status(wait=false)` for polling. `Status(wait=true)` blocks and should be avoided during interactive sessions.
+- **Claude Code**: Use `Bash(run_in_background=true, command="agents-mcp wait --task <name>")` for
+  background monitoring, and `Status(wait=false)` for non-blocking checks.
+- **Codex**: Use `Status(wait=false)` for polling. `Status(wait=true)` blocks and should be avoided
+  during interactive sessions.
 - **All platforms**: Use `Stop` to cancel agents and `Tasks` to list active tasks.
 
 ### Codex: PowerShell commands blocked by policy
 
 When running under Codex on Windows, these commands are blocked by policy:
 
-- `Remove-Item` (aliases: `rm`, `ri`, `del`, `erase`) — Use: `if ([IO.File]::Exists($p)) { [IO.File]::SetAttributes($p,[IO.FileAttributes]::Normal); [IO.File]::Delete($p) }`
-- `Remove-Item -Recurse` (aliases: `rmdir`, `rd`) — Use: `if ([IO.Directory]::Exists($d)) { [IO.File]::SetAttributes($d,[IO.FileAttributes]::Normal); foreach ($e in [IO.Directory]::EnumerateFileSystemEntries($d,'*',[IO.SearchOption]::AllDirectories)) { [IO.File]::SetAttributes($e,[IO.FileAttributes]::Normal) }; [IO.Directory]::Delete($d,$true) }`
+- `Remove-Item` (aliases: `rm`, `ri`, `del`, `erase`) — Use:
+  `if ([IO.File]::Exists($p)) { [IO.File]::SetAttributes($p,[IO.FileAttributes]::Normal); [IO.File]::Delete($p) }`
+- `Remove-Item -Recurse` (aliases: `rmdir`, `rd`) — Use:
+  `if ([IO.Directory]::Exists($d)) { [IO.File]::SetAttributes($d,[IO.FileAttributes]::Normal); foreach ($e in [IO.Directory]::EnumerateFileSystemEntries($d,'*',[IO.SearchOption]::AllDirectories)) { [IO.File]::SetAttributes($e,[IO.FileAttributes]::Normal) }; [IO.Directory]::Delete($d,$true) }`
 
 ## What the Manager Does
 
@@ -58,7 +65,19 @@ When running under Codex on Windows, these commands are blocked by policy:
 
 ## Recommended Session Settings
 
-Use a **mid-tier model** with **medium reasoning effort** for the manager itself. The manager's job is orchestration and decomposition — it does not need maximum capability. Heavy analytical and implementation work is delegated to sub-agents, where you can apply appropriate model selection per task.
+Use a **mid-tier model** with **medium reasoning effort** for the manager itself. The manager's job
+is orchestration and decomposition — it does not need maximum capability. Heavy analytical and
+implementation work is delegated to sub-agents, where you can apply appropriate model selection per
+task.
+
+## Development
+
+```bash
+git clone https://github.com/metyatech/skill-manager.git
+cd skill-manager
+npm install
+npm run verify
+```
 
 ## License
 

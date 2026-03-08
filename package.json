@@ -1,0 +1,26 @@
+{
+  "name": "@metyatech/skill-manager",
+  "version": "1.0.0",
+  "description": "Task orchestrator that receives work, decomposes it, and dispatches background agents or teams for parallel execution.",
+  "type": "module",
+  "scripts": {
+    "lint:md": "markdownlint **/*.md --ignore node_modules --ignore AGENTS.md",
+    "format:md": "prettier --write **/*.md --ignore-path .prettierignore",
+    "format:check": "prettier --check **/*.md --ignore-path .prettierignore",
+    "verify": "npm run lint:md && npm run format:check && compose-agentsmd --compose && git diff --exit-code AGENTS.md"
+  },
+  "keywords": [
+    "manager",
+    "orchestrator",
+    "agent",
+    "skill",
+    "delegate"
+  ],
+  "author": "metyatech",
+  "license": "MIT",
+  "devDependencies": {
+    "compose-agentsmd": "^3.5.1",
+    "markdownlint-cli": "^0.44.0",
+    "prettier": "^3.5.2"
+  }
+}
