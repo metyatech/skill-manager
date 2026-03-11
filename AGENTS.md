@@ -48,21 +48,24 @@ Source: github:metyatech/agent-rules@HEAD/rules/global/autonomous-operations.md
 - No backward compatibility unless requested; no legacy aliases, shims, or temporary fallback behavior.
 - Proactively fix rule gaps, redundancy, or misplacement; regenerate AGENTS.md without waiting.
 - Self-evaluate continuously; fix rule/skill gaps immediately on discovery. In delegated mode, include improvement suggestions in the task result.
-- On user-reported failures: treat as systemic — fix, update rules, check for same pattern elsewhere, in one action.
+- On user-reported failures: treat as systemic - fix, update rules, check for same pattern elsewhere, in one action.
 - Session memory resets; use rule files as persistent memory. Never write to platform-specific local memory files; all persistent behavioral knowledge MUST live in agent rules.
 - Rules are source of truth; update conflicting repos to comply or encode the exception.
 - Investigate unclear items before proceeding; no assumptions without approval. Make scope/risk/cost/irreversibility decisions explicit.
 
+## Autonomous task resolution
+
+- If a verification step (e.g., `npm run verify`, `npm audit`) fails due to known security vulnerabilities, attempt to fix them automatically (e.g., `npm audit fix`). If the fix is successful and verification passes, commit and push the changes to the PR branch.
+- If a task is stuck or constantly failing due to quota limits (429 errors), ensure the task state is correctly updated in `task-tracker` so it can resume from the last successful stage in the next execution cycle.
+- Do not remain idle on a failing PR if a known automated fix exists.
+
 Source: github:metyatech/agent-rules@HEAD/rules/global/command-execution.md
 
 # Workflow and command execution
-
 ## MCP server setup verification
-
 - After adding or modifying an MCP server configuration, immediately verify connectivity using the platform's MCP health check and confirm the server is connected.
 - If a configured MCP server fails to connect, diagnose and fix before proceeding. Do not silently fall back to alternative tools without reporting the degradation.
 - At session start, if expected MCP tools are absent from the available tool set, verify MCP server health and report/fix connection failures before continuing.
-
 - Do not add wrappers or pipes to commands unless the user explicitly asks.
 - Prefer repository-standard scripts/commands (package.json scripts, README instructions).
 - Reproduce reported command issues by running the same command (or closest equivalent) before proposing fixes.
@@ -72,49 +75,50 @@ Source: github:metyatech/agent-rules@HEAD/rules/global/command-execution.md
 - If no branch is specified, work on the current branch; direct commits to main/master are allowed.
 - Do not assume agent platform capabilities beyond what is available; fail explicitly when unavailable.
 - When building a CLI, follow standard conventions: --help/-h, --version/-V, stdin/stdout piping, --json output, --dry-run for mutations, deterministic exit codes, and JSON Schema config validation.
-
-## Codex-only: Commands blocked by policy (PowerShell)
-
-- `Remove-Item` (aliases: `rm`, `ri`, `del`, `erase`) → Use: `if ([IO.File]::Exists($p)) { [IO.File]::SetAttributes($p,[IO.FileAttributes]::Normal); [IO.File]::Delete($p) }`
-- `Remove-Item -Recurse` (aliases: `rmdir`, `rd`) → Use: `if ([IO.Directory]::Exists($d)) { [IO.File]::SetAttributes($d,[IO.FileAttributes]::Normal); foreach ($e in [IO.Directory]::EnumerateFileSystemEntries($d,'*',[IO.SearchOption]::AllDirectories)) { [IO.File]::SetAttributes($e,[IO.FileAttributes]::Normal) }; [IO.Directory]::Delete($d,$true) }`
-
+## Codex-only PowerShell safety
+- `Remove-Item` (aliases: `rm`, `ri`, `del`, `erase`) ↁEUse: `if ([IO.File]::Exists($p)) { [IO.File]::SetAttributes($p,[IO.FileAttributes]::Normal); [IO.File]::Delete($p) }`
+- `Remove-Item -Recurse` (aliases: `rmdir`, `rd`) ↁEUse: `if ([IO.Directory]::Exists($d)) { [IO.File]::SetAttributes($d,[IO.FileAttributes]::Normal); foreach ($e in [IO.Directory]::EnumerateFileSystemEntries($d,'*',[IO.SearchOption]::AllDirectories)) { [IO.File]::SetAttributes($e,[IO.FileAttributes]::Normal) }; [IO.Directory]::Delete($d,$true) }`
+- In PowerShell, use `;` for sequential command chaining; never use `&&` or `||` as control-flow operators.
 ## Post-change deployment
-
-After modifying code, check whether deployment steps beyond commit/push are needed before concluding.
-
+- After modifying code, check whether deployment steps beyond commit/push are needed before concluding.
 - If the repo is globally linked (`npm ls -g` shows `->` to local path), rebuild and verify the global binary is functional.
 - If the repo powers a running service, daemon, or scheduled task, rebuild, restart, and verify with deterministic evidence.
 - Do not claim completion until the running instance reflects the changes.
+- Detection and verification procedures are in the `post-deploy` skill.
 
-Detection and verification procedures are in the `post-deploy` skill.
+- **PowerShell native environment**: Always remember that this is a Windows/PowerShell environment. Do not use Unix commands like grep or ls directly; use native PowerShell cmdlets (Select-String, Get-ChildItem) or provided optimized tools like grep_search.
 
 Source: github:metyatech/agent-rules@HEAD/rules/global/implementation-and-coding-standards.md
 
 # Engineering and implementation standards
 
-- Prefer official/standard framework/tooling approaches.
-- Prefer well-maintained dependencies; build in-house only when no suitable option exists.
-- Prefer third-party tools/services over custom implementations; prefer OSS/free-tier when feasible and call out tradeoffs.
-- PowerShell: `\` is literal (not escape); avoid shadowing auto variables (`$args`, `$PID`); avoid double-quoted `-Command` strings (prefer `-File`, single quotes, or here-strings).
-- If functionality is reusable, assess reuse first and propose shared module/repo; prefer remote dependencies (never local paths).
-- Maintainability > testability > extensibility > readability.
-- Single responsibility; composition over inheritance; clean dependency direction; no global mutable state.
-- Avoid deep nesting; guard clauses and small functions; clear intention-revealing names; no "Utils" dumping grounds.
+- Prefer official frameworks and well-maintained dependencies.
+- Use latest stable versions of packages/tools; document blockers if not.
+- Prefer OSS/free-tier services; call out tradeoffs.
+- PowerShell: \ is literal; avoid shadowing auto-vars; prefer single quotes.
+- Assess reuse first; prefer remote dependencies over local paths.
+- Single responsibility; composition over inheritance; clean dependency direction.
+- Avoid deep nesting; guard clauses; small functions; intention-revealing names.
 - Prefer config/constants over hardcoding; consolidate change points.
-- For GUI: prioritize ergonomics/discoverability, include in-app guidance for all components, prefer established design systems (Material, shadcn/ui, Fluent).
-- Keep DRY across code/specs/docs/tests/config/scripts; refactor repeated procedures into shared config with local overrides.
-- Fix root causes; remove obsolete/unused code/branches/comments; repair user-controlled tools at source, not via workarounds.
-- Ensure failure/cancellation paths tear down allocated resources; no partial state.
-- Do not block inside async APIs; avoid synchronous I/O where responsiveness is expected.
-- Avoid external command execution; prefer native SDKs. If unavoidable: absolute paths, safe argument handling, strict validation.
+- GUI: prioritize ergonomics, in-app guidance, and a natural top-to-bottom/left-to-right flow from current context to next action to result to optional detail.
+- Optimize for first-use clarity: use ordinary task language, avoid internal jargon, and make current selection, source choices, and result targets visually obvious in the UI.
+- In GUI interactions, follow established expectations for common controls (for example info icons, disclosure toggles, close buttons, tabs, row selection); only deviate when the UX gain clearly outweighs the surprise cost.
+- Prefer modern, visually rich UI and purposeful motion when they improve comprehension; avoid horizontal scrolling in primary application UI unless explicitly justified by the task.
+- In interactive selection flows, make the current item, the choice list, and the destination of the chosen result visually and spatially explicit. Prefer anchored drawers, callouts, overlays, or similar patterns over detached panels when they improve comprehension.
+- Do not treat stylistic richness or "game-like" presentation as success if users cannot immediately tell what is selected now, what they are choosing from, and where the change will apply. Comprehension wins over style.
+- Keep DRY across code/docs/tests/config; refactor repeated procedures.
+- Fix root causes; remove obsolete code; repair tools at source.
+- Ensure failure paths tear down resources; no partial state.
+- Do not block async APIs; avoid sync I/O where responsiveness is expected.
+- Avoid external command execution; prefer native SDKs.
 - Prefer stable public APIs; isolate/document unavoidable internal API usage.
-- Externalize large embedded strings/templates/rules.
-- Do not commit build artifacts (respect `.gitignore`); keep file/folder naming aligned and consistent.
-- Do not assume machine-specific environments; use repo-relative paths and explicit configuration.
-- Agent temp files MUST stay under OS temp unless requester approves.
-- For agent-facing tools/services, design for cross-agent compatibility via standard interfaces (CLI, HTTP, stdin/stdout, MCP).
-- Lifecycle install hooks (`prepare`/`preinstall`/`postinstall`) must succeed on a clean machine with no global tool assumptions; invoke required CLIs through project-local dependencies or package-manager executors (for npm, prefer `npm exec`).
-- After manifest changes, regenerate and commit corresponding lock files in the same commit.
+- Externalize large embedded strings/templates/rules; do not commit build artifacts and keep naming aligned.
+- No machine-specific environments; use relative paths and explicit config.
+- Agent temp files MUST stay under OS temp unless approved.
+- Design tools/services for agent-compatibility via standard interfaces (CLI).
+- Lifecycle hooks must succeed on clean machines; use npm exec.
+- Regenerate and commit lock files after manifest changes.
+- **Robust editing**: Run formatter (e.g. clang-format) IMMEDIATELY BEFORE replace to normalize disk state; do not re-read file unless changed externally.
 
 Source: github:metyatech/agent-rules@HEAD/rules/global/linting-formatting-and-static-analysis.md
 
@@ -152,6 +156,9 @@ Source: github:metyatech/agent-rules@HEAD/rules/global/multi-agent-delegation.md
 - Delegated agents must not modify rules directly; submit rule-gap suggestions in results for delegator review.
 - Delegated agents inherit delegator repository scope but must not expand it; fail explicitly if unavailable.
 - Do not run concurrent agents that modify the same repository/files; different repositories may run in parallel. When conflict risk is unclear, run sequentially.
+- Do not stop delegated agents merely because they are slow, retrying, or producing weak intermediate output while still making progress.
+- Stop a delegated agent only for a concrete reason: repo/file conflict risk, clear divergence from the approved direction, user-owned data risk, or a better-scoped replacement.
+- If a delegated agent creates clearly agent-owned temp, plan, or memory files outside the target repo, assess and clean them up automatically; escalate only when ownership or value is genuinely ambiguous.
 
 Execution discipline, agents-mcp dispatch configuration, and cost optimization details are in the `manager` skill.
 
@@ -159,43 +166,48 @@ Source: github:metyatech/agent-rules@HEAD/rules/global/planning-and-approval-gat
 
 # Planning and approval gate
 
-- **Always OK** (no approval needed): read-only inspection, spawning read-only agents, temp files under OS temp, dependency install, formatters/linters/typecheck/tests/builds (including auto-fix), deterministic codegen/build steps.
-- **Always ask** (approval required): file/rule/config edits, dependency/tool changes, git beyond status/diff/log, external side effects (deploy/publish/API writes/account changes).
+- **Default approval model**: in user-controlled repositories and for in-scope work, the user's request is plan approval. Do not require a separate explicit "yes" for normal implementation, testing, commits, pushes, releases, or deploys that are part of completing the requested task.
+- **Still ask first**: destructive or hard-to-reverse actions, force-push/history rewrite, deleting repos/data, third-party account side effects, billing/permissions changes, or scope expansion beyond the user's request.
 - **Uncertain impact**: request approval.
-- **Default flow**: clarify goal + plan → restate as AC → confirm with requester → wait for explicit "yes" → execute. Re-request only if plan/scope changes.
 - **Delegated mode**: delegation itself is plan approval; fail back on scope expansion.
-- Do not treat the original task request as plan approval.
-- If state-changing work starts without required "yes", stop immediately, report the gate miss, and restart from the approval gate.
-- No bypass exceptions: "skip planning/just do it" means move quickly through the gate, not around it.
 - **Blanket approval**: broad directives (e.g., "fix everything") cover all in-scope follow-up; re-request only for out-of-scope expansion.
+- PR review feedback handling is always pre-approved; do not ask for approval before addressing PR comments.
+- For user-owned publishable packages, explicit requests such as "commit & push" or "complete this fix" include approval for the release/publish chain when release is the normal completion path, unless the user explicitly limits scope.
 
 Reviewer proxy approval procedures are in the `autonomous-orchestrator` skill.
 
 Source: github:metyatech/agent-rules@HEAD/rules/global/quality-and-delivery.md
 
 # Quality and delivery gates
-
 Non-negotiable gates for any state-changing work or any claim of "done", "fixed", "working", or "passing".
 
-1. **BEFORE** state-changing work: list AC as binary, testable statements (aim 1-3 items). Ask blocking questions if ambiguous.
-2. **BEFORE** each `git commit`: repo's full verification suite must pass in the current working tree.
-3. **WITH** each AC: define verification evidence (automated test preferred; deterministic manual procedure otherwise).
-4. **FOR** code/runtime changes: automated tests required (requester may explicitly approve skipping). Bugfixes MUST include a regression test.
-5. **ALWAYS**: run repo-standard `verify` command; if missing, add it. Enforce via commit-time hooks and CI.
-6. **IN** final response: AC→evidence mapping with outcomes (PASS/FAIL/NOT RUN/N/A) and exact verification commands executed.
+1. **BEFORE** state-changing work: list AC as binary, testable statements.
+2. **BEFORE** each git commit: repo's full verification suite must pass.
+3. **WITH** each AC: define verification evidence.
+4. **FOR** code/runtime changes: automated tests required. Bugfixes MUST include a regression test.
+5. **ALWAYS**: run repo-standard verify command; if missing, add it.
+6. **IN** final response: AC -> evidence mapping with outcomes and verification commands.
 
 ## Quality principles
-
 - Quality (correctness, safety, robustness, verifiability) > speed/convenience.
-- If full-suite scope is unclear, run repo-default verify/CI commands rather than guessing.
-- CI must run the full suite on PRs and default-branch pushes; require passing checks for merges; add CI if missing.
-- Commit-time hooks must run full verify and block commits; confirm hooks installed before first commit in a session.
-- Never disable checks, weaken assertions/types, or add retries solely to make checks pass.
+- CI must run full suite on PRs/pushes; require passing checks for merges; add CI if missing.
+- Commit-time hooks must run full verify and block commits; confirm hooks installed.
 - Test-first: add/update tests, observe failure, implement fix, observe pass.
-- Never swallow errors; fail fast with explicit errors reflecting actual state and input context.
-- Validate config/external inputs at boundaries with actionable failure guidance.
+- Never swallow errors; fail fast with explicit context.
+- Validate config/external inputs at boundaries.
+- For user-facing apps, perform deterministic runtime verification before completion.
+- Before implementation is considered complete, define the claimed runtime environment matrix and verify every claimed environment directly; anything not directly verified must be reported as unverified or unsupported, never implied as covered.
+- Prefer the least costly faithful verification environment: use automated tests, local or production-like environments, emulators, and simulators whenever they provide equivalent coverage; require real devices or live environments only for behaviors that cannot be validated faithfully otherwise.
+- For authentication, billing, authorization, or data-persistence changes, completion requires end-to-end verification in a live or production-like deployed environment, including post-deploy smoke coverage of the critical user journey.
+- For critical systems, passing unit/integration tests, CI, build, and health checks is necessary but insufficient; do not conclude until runtime user flows succeed in each claimed environment.
+- When an intended environment cannot be exercised with available tools or access, stop short of a completion claim, state the exact gap, and treat that environment as out of scope until verified.
+- For GUI/UX changes, include a first-use walkthrough against the primary user goal; functional E2E alone is insufficient when clarity/usability is in scope.
+- If the user still reports a GUI flow as confusing, treat that as a failed acceptance gate: refine labels/order/flow and add a regression check for that confusion class before concluding.
+- For GUI work, do not conclude from functional correctness alone: require screenshot-based review plus automated checks for horizontal overflow, clipping, unintended compact-control wrapping, and clearly visible primary/current state where feasible.
+- Never claim bug-free behavior. Report scope, evidence, and residual risk explicitly.
+- For AI review bots, follow the re-triggering procedures in the `pr-review-workflow` skill.
 
-Detailed evidence format, CI setup, test practices, and error handling procedures are in the `quality-workflow` skill.
+Detailed evidence format and procedures are in the quality-workflow skill.
 
 Source: github:metyatech/agent-rules@HEAD/rules/global/release-and-publication.md
 
@@ -209,6 +221,7 @@ Source: github:metyatech/agent-rules@HEAD/rules/global/release-and-publication.m
 - Verify published packages resolve and run correctly before reporting done.
 - For public repos, set GitHub Description, Topics, and Homepage. Assign topics from the standard set defined in the `release-publish` skill.
 - Before reporting a publishable-package change as complete, verify the full delivery chain (commit → push → version bump → release → publish → install verify). Procedures in the `release-publish` skill.
+- For user-owned publishable packages, when the user asks to commit/push or finalize a fix, treat release/publish as in-scope follow-up by default and execute the full delivery chain unless the user explicitly opts out.
 
 Source: github:metyatech/agent-rules@HEAD/rules/global/skill-authoring.md
 
@@ -234,7 +247,8 @@ Source: github:metyatech/agent-rules@HEAD/rules/global/task-lifecycle-tracking.m
 - When reporting a task as complete, state the lifecycle stage explicitly (committed/pushed/released/etc.); never claim "done" when downstream stages remain incomplete.
 - If `task-tracker` is not installed, install it via `npm install -g @metyatech/task-tracker` before proceeding.
 - CLI: `task-tracker add "desc"` / `check` / `list` / `done <id>` / `remove <id>` / `update <id> --stage <stage>` — use `--stage`, NOT `--status`.
-- Valid stages: `pending`, `in-progress`, `committed`, `pushed`, `released`, `done`.
+- Persistent stages: `pending`, `in-progress`, `committed`, `released`, `done`.
+- Derived display stage: `pushed`. Do not create tracker-only follow-up commits just to record `pushed`; record `committed` in the closing code commit and let `task-tracker` derive `pushed` from upstream reachability of that committed event.
 - The task-tracker state file (`.tasks.jsonl`) must be committed to version control; do not add it to `.gitignore`.
 
 Source: github:metyatech/agent-rules@HEAD/rules/global/thread-inbox.md
@@ -263,29 +277,21 @@ Source: github:metyatech/agent-rules@HEAD/rules/global/user-identity-and-account
 Source: github:metyatech/agent-rules@HEAD/rules/global/writing-and-documentation.md
 
 # Writing and documentation
-
 ## User responses
-
 - Respond in Japanese unless the user requests otherwise.
-- Always report whether you committed and whether you pushed; include repo(s), branch(es), and commit hash(es) when applicable.
-- After completing a response, emit the Windows SystemSounds.Asterisk sound via PowerShell only when operating in direct mode (top-level agent).
-- If operating in delegated mode (spawned by another agent / sub-agent), do not emit notification sounds.
-- If operating as a manager/orchestrator, do not ask delegated sub-agents to emit sounds; emit at most once when the overall task is complete (direct mode only).
-- When delivering a new tool, feature, or artifact to the user, explain what it is, how to use it (with example commands), and what its key capabilities are. Do not report only completion status; always include a usage guide in the same response.
-
+- Report commit/push status only when the turn changed files; keep it simple unless the user asks for details.
+- In direct mode, emit the Windows SystemSounds.Asterisk sound after completing a response; delegated agents never emit sounds, and managers emit at most once for the overall task.
+- When delivering a new tool, feature, or artifact, explain what it is, how to use it, and its key capabilities.
+- Prefer short, user-centric progress reports. Explain what the user can now do, not implementation details, unless internals are requested.
+- Do not include AC/evidence sections or command transcripts in normal user reports unless explicitly requested.
+- At the end of a session or task, report any lingering unresolved technical friction or environment issues.
 ## Developer-facing writing
-
-- Write developer documentation, code comments, and commit messages in English.
-- Rule modules are written in English.
-
+- Write developer documentation, code comments, commit messages, and rule modules in English.
 ## README and docs
-
-- Every repository must include README.md covering overview/purpose, supported environments/compatibility, install/setup, usage examples, dev commands (build/test/lint/format), required env/config, release/deploy steps if applicable, and links to SECURITY.md / CONTRIBUTING.md / LICENSE / CHANGELOG.md when they exist.
-- For any change, assess documentation impact and update all affected docs in the same change set so docs match behavior (README, docs/, examples, comments, templates, ADRs/specs, diagrams).
+- Every repository must include README.md covering overview/purpose, supported environments/compatibility, install/setup, usage examples, dev commands, required env/config, release/deploy steps if applicable, and links to SECURITY.md / CONTRIBUTING.md / LICENSE / CHANGELOG.md when they exist.
+- For any change, assess documentation impact and update affected docs in the same change set so docs match behavior (README, docs/, examples, comments, templates, ADRs/specs, diagrams).
 - If no documentation updates are needed, explain why in the final response.
-- For CLIs, document every parameter (required and optional) with a description and at least one example; also include at least one end-to-end example command.
-- Do not include user-specific local paths, fixed workspace directories, drive letters, or personal data in doc examples. Prefer repo-relative paths and placeholders so instructions work in arbitrary environments.
-
+- For CLIs, document every parameter with a description and at least one example, plus one end-to-end example command.
+- Do not include user-specific local paths, fixed workspace directories, drive letters, or personal data in doc examples; prefer repo-relative paths and placeholders.
 ## Markdown linking
-
 - When a Markdown document links to a local file, use a path relative to the Markdown file.

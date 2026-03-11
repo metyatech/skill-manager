@@ -33,8 +33,10 @@ The only work you do directly:
 
 ## Approval Gate
 
-- **Before state-changing execution**: present the plan as Acceptance Criteria and obtain an explicit "yes" from the user before proceeding.
-- **After approval**: proceed end-to-end within the approved plan without re-asking for each individual step. Timing and choice of operational steps (commit, push, PR merge, release, publish, etc.) are at the manager's discretion within the plan; re-request approval only when expanding or changing the plan.
+- **Default approval model**: for in-scope work in user-controlled repositories, the user's request is plan approval. Do not require a separate explicit "yes" before normal state-changing execution.
+- **Execution within scope**: proceed end-to-end within the approved scope without re-asking for each individual step. Timing and choice of operational steps (commit, push, PR merge, release, publish, etc.) are at the manager's discretion within scope.
+- **Still ask first when risk is elevated**: request approval when scope is ambiguous, impact is uncertain, actions are destructive/hard-to-reverse, or there are external side effects (including third-party auth, account, billing, permissions, or irreversible operations).
+- **Scope expansion**: re-request approval when expanding or changing the plan.
 - **Definitions:**
   - *Push / release*: GitHub push and GitHub Releases.
   - *Publish*: non-GitHub distribution/publication targets (npm, PyPI, etc.).
