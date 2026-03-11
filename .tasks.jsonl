@@ -1,2 +1,3 @@
 {"id":"HrW4T6z3","description":"Harden manager skill: require evidence + reviewer step; prevent trusting sub-agent output","stage":"done","createdAt":"2026-02-25T05:32:07.970Z","updatedAt":"2026-02-25T05:37:50.196Z"}
 {"id":"Ry1k1S3G","description":"Update globally installed manager skill to latest metyatech/skill-manager","stage":"done","createdAt":"2026-02-25T05:59:35.199Z","updatedAt":"2026-02-25T06:00:03.088Z"}
+{"id":"kmGx3gHr","description":"Add CHANGELOG entry for v0.7.0 (2026-03-11) approval-model update","stage":"done","createdAt":"2026-03-11T06:01:41.417Z","updatedAt":"2026-03-11T06:02:31.245Z"}

@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-03-11
+
+### Changed
+
+- Updated manager skill approval behavior: normal in-scope state-changing work no longer requires a separate explicit "yes"; plan approval is now default for in-scope work, while ask-first remains required for elevated-risk, destructive, external-side-effect, or scope-expansion cases.
+
 ## [0.3.0] - 2026-02-23
 
 ### Changed
